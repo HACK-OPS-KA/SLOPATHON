@@ -72,12 +72,9 @@ git push -u origin HEAD
 
 ---
 
-## Demo format
+## Demo format ( At Bat )
 
-Show the working thing first.
-
-Then, in ~60 seconds:
-
+You have 3 minutes to show: 
 1. The bad idea (one sentence)
 2. The build (what did you make?)
 3. The proof (run it)
