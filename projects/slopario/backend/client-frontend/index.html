@@ -91,8 +91,14 @@ transition: none;
 (function () {
   const zone = document.getElementById('joystickZone');
   const stick = document.getElementById('joystickStick');
+  const sessionId = new URLSearchParams(window.location.search).get('s');
 
-  const websocket = new WebSocket(window.location.href.replace("http","ws"));
+  if (!sessionId) {
+    console.error('Missing session token in query parameter `s`.');
+    return;
+  }
+
+  const websocket = new WebSocket(`${window.location.origin.replace(/^http/, 'ws')}/ws/controller/${encodeURIComponent(sessionId)}`);
   websocket.addEventListener("open", () => {
     console.log("CONNECTED");
   });
