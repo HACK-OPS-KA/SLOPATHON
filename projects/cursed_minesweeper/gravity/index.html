@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💥 FUCKED UP MINESWEEPER 💥</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1 class="hero-title">💥🚩 FUCKED UP 🚩💥 MINESWEEPER</h1>
+      <p class="hero-tagline">the #1 SLOPATHON minesweeper experience™</p>
+      <p class="hero-blurb">
+        welcome 2 the ULTIMATE mine sweeping simulator!!! you click the squares
+        and PRAY 🙏 that there is no bomb. if there IS a bomb you EXPLODE and
+        also lose. its literally that deep. we made a bunch of cursed versions
+        because one normal minesweeper was simply NOT enough content for the
+        grind. no refunds. touch grass afterwards.
+      </p>
+    </header>
+
+    <!-- SHARED NAV: every variant adds ONE <a> line here. keep it additive. -->
+    <nav class="versions" aria-label="Minesweeper versions">
+      <a class="version-link" href="../vanilla/index.html">🟩 Original (Vanilla)</a>
+      <a class="version-link" href="../ad-minesweeper/index.html">📺 Ad-Supported</a>
+      <a class="version-link" href="../adversarial-minesweeper/index.html">⚔️ Player vs Bot</a>
+      <a class="version-link" href="../anxiety/index.html">😰 Anxiety</a>
+      <a class="version-link" href="../captcha-minesweeper/index.html">🤖 Captcha Every Click</a>
+      <a class="version-link" href="../crawler/index.html">🕷️ Crawler</a>
+      <a class="version-link" href="../far-vision/index.html">🔭 Far Vision</a>
+      <a class="version-link current" href="../gravity/index.html">🪐 Gravity</a>
+      <a class="version-link" href="../lootbox/index.html">🎁 Lootbox</a>
+      <a class="version-link" href="../multiplier/index.html">✖️ Multiplier</a>
+      <a class="version-link" href="../snake/index.html">🐍 Snake</a>
+      <a class="version-link" href="../sycophant/index.html">🥰 Sycophant</a>
+      <a class="version-link" href="../try-not-to-win/index.html">🙅 TryNotToWin</a>
+      <a class="version-link" href="../wanderlust/index.html">🧭 Wanderlust</a>
+    </nav>
+
+    <main class="game" aria-label="Playable minesweeper">
+      <div class="game-hud">
+        <div class="hud-readout" id="mine-counter">010</div>
+        <button class="hud-reset" id="reset" aria-label="New game">🙂</button>
+        <div class="hud-readout" id="timer">000</div>
+      </div>
+
+      <div class="game-controls">
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty">
+          <option value="beginner">Beginner (9×9, 10)</option>
+          <option value="intermediate">Intermediate (16×16, 40)</option>
+          <option value="expert">Expert (16×30, 99)</option>
+        </select>
+      </div>
+
+      <div class="board" id="board"></div>
+
+      <p class="game-hint">
+        🪐 GRAVITY: numbers are FRACTIONAL (1.7, 2.4…) because mines sit between
+        the cells. Right-click a cell that hides a mine to make it DROP to the
+        bottom — the cell opens and every number reshuffles. Left-click reveals.
+      </p>
+    </main>
+
+    <footer class="site-footer">made in a slopathon. do not sell to nintendo.</footer>
+
+    <script src="game.js"></script>
+  </body>
+</html>
