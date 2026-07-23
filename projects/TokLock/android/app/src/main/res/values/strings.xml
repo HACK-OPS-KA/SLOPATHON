@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TokLock</string>
+    <string name="a11y_description">Notices the moment your focus drifts, so your coach can gently keep you present during a session.</string>
+</resources>
