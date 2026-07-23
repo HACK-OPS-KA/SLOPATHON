@@ -132,11 +132,10 @@ transition: none;
   function onJoystickMove(dx, dy) {
     websocket.send(JSON.stringify({
         direction: {
-            x: dy,
+            x: dx,
             y: dy
         }
     }))
-    console.log(dx, dy)
   }
 
   function randomizeColor() {
