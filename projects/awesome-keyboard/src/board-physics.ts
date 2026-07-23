@@ -7,13 +7,17 @@ import {
   World,
 } from 'matter-js';
 import { SLOT_COUNT } from './board-state';
+import {
+  BALL_RADIUS,
+  PIN_RADIUS,
+  createPinLayout,
+} from './pin-layout';
 
 export const BOARD_WIDTH = 880;
 export const BOARD_HEIGHT = 560;
 export const LAUNCH_HEIGHT = 60;
 export const BALL_LIMIT = 25;
 
-const BALL_RADIUS = 9;
 const SLOT_TOP = 490;
 const SLOT_WIDTH = BOARD_WIDTH / SLOT_COUNT;
 const BALL_CATEGORY = 0x0002;
@@ -151,15 +155,8 @@ export class BoardPhysics {
   }
 
   private addPins(bodies: Body[], options: object): void {
-    const rowGap = 43;
-    for (let row = 0; row < 9; row += 1) {
-      const y = 105 + row * rowGap;
-      const offset = row % 2 === 0 ? SLOT_WIDTH / 2 : 0;
-      for (let x = offset; x <= BOARD_WIDTH; x += SLOT_WIDTH) {
-        if (x > 12 && x < BOARD_WIDTH - 12) {
-          bodies.push(Bodies.circle(x, y, 6.5, options));
-        }
-      }
+    for (const pin of createPinLayout(BOARD_WIDTH)) {
+      bodies.push(Bodies.circle(pin.x, pin.y, PIN_RADIUS, options));
     }
   }
 

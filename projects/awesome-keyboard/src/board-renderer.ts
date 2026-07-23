@@ -66,12 +66,17 @@ export class BoardRenderer {
   }
 
   private drawBackground(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = '#eadbbd';
+    ctx.fillStyle = '#c0c0c0';
     ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
-    ctx.fillStyle = '#122f31';
+    ctx.fillStyle = '#000080';
     ctx.fillRect(0, 0, BOARD_WIDTH, LAUNCH_HEIGHT);
-    ctx.strokeStyle = 'rgba(255,255,255,.2)';
-    ctx.setLineDash([4, 9]);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px "MS Sans Serif", Tahoma, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('DROP ZONE — CLICK TO INSERT BALL', 12, 16);
+    ctx.strokeStyle = '#ffffff';
+    ctx.setLineDash([2, 4]);
     ctx.beginPath();
     ctx.moveTo(22, 31);
     ctx.lineTo(BOARD_WIDTH - 22, 31);
@@ -91,15 +96,16 @@ export class BoardRenderer {
         0,
         Math.PI * 2,
       );
-      ctx.fillStyle = '#c49a52';
-      ctx.shadowColor = 'rgba(38, 20, 8, .32)';
-      ctx.shadowBlur = 5;
+      ctx.fillStyle = '#808080';
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 2;
       ctx.shadowOffsetY = 2;
       ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.beginPath();
-      ctx.arc(body.position.x - 1.5, body.position.y - 2, 2, 0, Math.PI * 2);
-      ctx.fillStyle = '#f8e8b2';
+      ctx.arc(body.position.x - 2, body.position.y - 2, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
       ctx.fill();
     }
   }
@@ -111,14 +117,13 @@ export class BoardRenderer {
       const x = slot * slotWidth;
       const flashing = this.activeSlot === slot
         && performance.now() < this.flashUntil;
-      ctx.fillStyle = flashing
-        ? '#e74c2f'
-        : slot % 2 === 0
-          ? '#173f40'
-          : '#205052';
+      ctx.fillStyle = flashing ? '#000080' : '#c0c0c0';
       ctx.fillRect(x + 3, 490, slotWidth - 6, 67);
-      ctx.fillStyle = flashing ? '#fff8df' : '#f3d993';
-      ctx.font = '48px "Bebas Neue"';
+      ctx.strokeStyle = flashing ? '#ffffff' : '#000000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 4, 491, slotWidth - 8, 65);
+      ctx.fillStyle = flashing ? '#ffffff' : '#000000';
+      ctx.font = 'bold 38px "Courier New", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const visibleCharacter = flashing ? this.activeCharacter : letters[slot];
@@ -141,15 +146,16 @@ export class BoardRenderer {
       body.position.y,
       10,
     );
-    gradient.addColorStop(0, '#fff4c6');
-    gradient.addColorStop(0.24, '#ff7659');
-    gradient.addColorStop(1, '#b51f24');
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(0.24, '#ff0000');
+    gradient.addColorStop(1, '#800000');
     ctx.beginPath();
     ctx.arc(body.position.x, body.position.y, 9, 0, Math.PI * 2);
     ctx.fillStyle = gradient;
-    ctx.shadowColor = 'rgba(68, 14, 13, .45)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 3;
+    ctx.shadowColor = '#000000';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
     ctx.fill();
     ctx.shadowColor = 'transparent';
   }

@@ -12,29 +12,33 @@
     <main class="machine">
       <header class="titlebar">
         <div class="brand">
-          <span class="brand__edition">UNRELIABLE INPUT DIVISION</span>
-          <h1>AWESOME<br />KEYBOARD!</h1>
+          <span class="brand__icon" aria-hidden="true">⌨</span>
+          <h1>Awesome Keyboard!</h1>
         </div>
         <div class="titlebar__right">
-          <div class="batch">
-            <span>LIVE BALLS</span>
-            <strong id="ball-count">00</strong>
-          </div>
+          <button
+            id="minimize"
+            class="window-button"
+            type="button"
+            aria-label="Minimize Awesome Keyboard"
+            title="Minimize (Ctrl+Alt+K)"
+          >_</button>
           <button
             id="close"
-            class="close"
+            class="window-button"
             type="button"
-            aria-label="Close Sloppy Keyboard"
+            aria-label="Close Awesome Keyboard"
           >×</button>
         </div>
       </header>
 
       <section class="instruction">
-        <span class="instruction__arrow">↓</span>
-        <p><strong>CHOOSE YOUR ODDS.</strong> Click the dark rail to drop.</p>
-        <button id="skip" class="skip" type="button">
-          <span>↻</span> SKIP LETTERS
-        </button>
+        <button class="menu-label" type="button"><u>F</u>ile</button>
+        <button class="menu-label" type="button"><u>H</u>elp</button>
+        <p>Click the blue drop zone to release a ball.</p>
+        <div class="batch">
+          Balls: <strong id="ball-count">00</strong>
+        </div>
       </section>
 
       <section class="board-shell" aria-label="Galton board keyboard">
@@ -45,9 +49,10 @@
       <footer class="readout">
         <span id="status">READY · CLICK THE DROP RAIL</span>
         <div class="typed">
-          LAST TRANSMISSION
+          Last key:
           <strong id="typed-value">–</strong>
         </div>
+        <span class="hotkey">Ctrl+Alt+K: minimize / restore</span>
       </footer>
     </main>
     <script src="./renderer.ts"></script>

@@ -10,8 +10,7 @@ The lowercase letter in its landing bin is typed into the input that already
 has focus.
 
 Ten unique letters are available in each volley. Launch as many as 25 balls at
-once; their shared letter bank rerolls after the final ball lands. If none of
-the current letters help, use **Skip letters** while the board is idle.
+once; their shared letter bank rerolls after the final ball lands.
 
 ```text
 click -> gravity -> statistically questionable spelling -> keyboard input
@@ -37,6 +36,9 @@ npm start
 Focus a text field in another application, then click the dark drop rail at
 the top of Sloppy Keyboard. The board is non-focusable, so the other
 application should retain keyboard focus.
+
+Press `Ctrl+Alt+K` at any time to minimize or restore the board without
+changing the focused typing target.
 
 ## Verify
 
