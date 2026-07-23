@@ -33,12 +33,10 @@ npm install
 npm start
 ```
 
-Focus a text field in another application, then click the dark drop rail at
-the top of Sloppy Keyboard. The board is non-focusable, so the other
-application should retain keyboard focus.
-
-Press `Ctrl+Alt+O` at any time to minimize or restore the board without
-changing the focused typing target.
+Sloppy Keyboard takes keyboard focus when launched, and ignores physical
+keystrokes while it has focus. Close the window to return input to the previous
+application; use the on-screen minimize and close buttons in the title bar to
+control the app.
 
 ## Verify
 

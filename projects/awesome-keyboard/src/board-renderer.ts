@@ -5,18 +5,28 @@ import {
   LAUNCH_HEIGHT,
   BoardPhysics,
 } from './board-physics';
+import type { SlotValue } from './board-state';
+import {
+  ConfettiParticle,
+  createConfettiBurst,
+  drawConfetti,
+} from './board-effects';
+
+export const LANDING_FLASH_MS = 480;
 
 export class BoardRenderer {
   private readonly context: CanvasRenderingContext2D;
   private animationFrame = 0;
   private activeSlot: number | null = null;
-  private activeCharacter = '';
+  private activeValue: SlotValue | null = null;
   private flashUntil = 0;
+  private armedSpecialSlot: number | null = null;
+  private confetti: ConfettiParticle[] = [];
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly physics: BoardPhysics,
-    private readonly getLetters: () => string[],
+    private readonly getSlots: () => SlotValue[],
   ) {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Canvas is unavailable.');
@@ -32,10 +42,25 @@ export class BoardRenderer {
     this.animationFrame = requestAnimationFrame(draw);
   }
 
-  flash(slot: number, character: string): void {
+  flash(slot: number, value: SlotValue): void {
     this.activeSlot = slot;
-    this.activeCharacter = character;
-    this.flashUntil = performance.now() + 480;
+    this.activeValue = value;
+    this.flashUntil = performance.now() + LANDING_FLASH_MS;
+  }
+
+  celebrateSpecial(slot: number): void {
+    this.armedSpecialSlot = slot;
+    const slotWidth = BOARD_WIDTH / 10;
+    this.confetti.push(...createConfettiBurst(
+      slot * slotWidth + slotWidth / 2,
+      510,
+      performance.now(),
+    ));
+  }
+
+  resetSpecial(): void {
+    this.armedSpecialSlot = null;
+    this.confetti = [];
   }
 
   toBoardX(clientX: number): number {
@@ -63,6 +88,7 @@ export class BoardRenderer {
     this.drawPins(ctx);
     this.drawSlots(ctx);
     this.drawBalls(ctx);
+    this.confetti = drawConfetti(ctx, this.confetti, performance.now());
   }
 
   private drawBackground(ctx: CanvasRenderingContext2D): void {
@@ -112,22 +138,59 @@ export class BoardRenderer {
 
   private drawSlots(ctx: CanvasRenderingContext2D): void {
     const slotWidth = BOARD_WIDTH / 10;
-    const letters = this.getLetters();
+    const slots = this.getSlots();
     for (let slot = 0; slot < 10; slot += 1) {
       const x = slot * slotWidth;
       const flashing = this.activeSlot === slot
         && performance.now() < this.flashUntil;
-      ctx.fillStyle = flashing ? '#000080' : '#c0c0c0';
+      const armed = this.armedSpecialSlot === slot;
+      ctx.fillStyle = flashing || armed ? '#000080' : '#c0c0c0';
       ctx.fillRect(x + 3, 490, slotWidth - 6, 67);
-      ctx.strokeStyle = flashing ? '#ffffff' : '#000000';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = flashing || armed ? '#ffffff' : '#000000';
+      ctx.lineWidth = armed ? 3 : 2;
       ctx.strokeRect(x + 4, 491, slotWidth - 8, 65);
-      ctx.fillStyle = flashing ? '#ffffff' : '#000000';
+      if (armed) {
+        ctx.strokeStyle = performance.now() % 360 < 180 ? '#ffff00' : '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 8, 495, slotWidth - 16, 57);
+      }
+      ctx.fillStyle = flashing || armed ? '#ffffff' : '#000000';
       ctx.font = 'bold 38px "Courier New", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      const visibleCharacter = flashing ? this.activeCharacter : letters[slot];
-      ctx.fillText(visibleCharacter, x + slotWidth / 2, 526);
+      const value = flashing && this.activeValue ? this.activeValue : slots[slot];
+      if (value.kind === 'special') {
+        this.drawSpecial(ctx, x, slotWidth, flashing || armed, armed);
+      } else {
+        ctx.fillText(value.character, x + slotWidth / 2, 526);
+      }
+    }
+  }
+
+  private drawSpecial(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    width: number,
+    flashing: boolean,
+    armed: boolean,
+  ): void {
+    ctx.fillStyle = flashing ? '#ffffff' : '#ffff00';
+    ctx.beginPath();
+    ctx.moveTo(x + width / 2, 499);
+    ctx.lineTo(x + width - 14, 550);
+    ctx.lineTo(x + 14, 550);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 31px "Courier New", monospace';
+    ctx.fillText('?', x + width / 2, 532);
+    if (armed) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 9px "MS Sans Serif", Tahoma, sans-serif';
+      ctx.fillText('ARMED', x + width / 2, 548);
     }
   }
 

@@ -188,6 +188,108 @@ canvas {
   border: 1px dotted rgb(255 255 255 / 35%);
 }
 
+.selector {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background:
+    repeating-linear-gradient(135deg, rgb(0 0 0 / 28%) 0 2px, transparent 2px 6px),
+    rgb(0 0 0 / 64%);
+}
+
+.selector[hidden] {
+  display: none;
+}
+
+.selector__window {
+  width: 900px;
+  padding: 3px 3px 18px;
+  border-top: 3px solid #fff;
+  border-left: 3px solid #fff;
+  border-right: 3px solid #000;
+  border-bottom: 3px solid #000;
+  background: var(--win-gray);
+  box-shadow: 8px 8px 0 rgb(0 0 0 / 55%);
+}
+
+.selector__titlebar {
+  padding: 6px;
+  color: #fff;
+  background: var(--win-blue);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.selector h2 {
+  margin: 17px 14px 12px;
+  font-family: "Courier New", monospace;
+  font-size: 20px;
+}
+
+.reel-viewport {
+  position: relative;
+  width: 840px;
+  height: 134px;
+  margin: auto;
+  overflow: hidden;
+  border-top: 4px solid #404040;
+  border-left: 4px solid #404040;
+  border-right: 4px solid #fff;
+  border-bottom: 4px solid #fff;
+  background: #101010;
+}
+
+.reel-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.reel-card {
+  width: 210px;
+  height: 126px;
+  flex: 0 0 210px;
+  padding: 25px 14px 10px;
+  color: #fff;
+  border-right: 3px solid #000;
+  background:
+    linear-gradient(180deg, var(--accent) 0 7px, transparent 7px),
+    #282828;
+  text-align: center;
+}
+
+.reel-card strong,
+.reel-card span {
+  display: block;
+}
+
+.reel-card strong {
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.reel-card span {
+  color: #d8d8d8;
+  line-height: 1.4;
+}
+
+.reel-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  background: #ffff00;
+  box-shadow: 0 0 0 1px #000;
+}
+
+.selector__window > p {
+  margin: 12px 14px 0;
+  font-size: 13px;
+}
+
 .readout {
   height: 54px;
   display: grid;

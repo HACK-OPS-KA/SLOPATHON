@@ -21,7 +21,7 @@
             class="window-button"
             type="button"
             aria-label="Minimize Awesome Keyboard"
-            title="Minimize (Ctrl+Alt+O)"
+            title="Minimize"
           >_</button>
           <button
             id="close"
@@ -46,13 +46,26 @@
         <div class="glass-glare" aria-hidden="true"></div>
       </section>
 
+      <section id="selector" class="selector" hidden aria-live="polite">
+        <div class="selector__window">
+          <div class="selector__titlebar">
+            <span>⚠ Mystery Slot Selector</span>
+          </div>
+          <h2 id="selector-title">SELECTING PENALTY...</h2>
+          <div class="reel-viewport">
+            <div id="reel-track" class="reel-track"></div>
+            <div class="reel-marker" aria-hidden="true"></div>
+          </div>
+          <p id="selector-result">The machine is deciding.</p>
+        </div>
+      </section>
+
       <footer class="readout">
         <span id="status">READY · CLICK THE DROP RAIL</span>
         <div class="typed">
           Last key:
           <strong id="typed-value">–</strong>
         </div>
-        <span class="hotkey">Ctrl+Alt+O: minimize / restore</span>
       </footer>
     </main>
     <script src="./renderer.ts"></script>

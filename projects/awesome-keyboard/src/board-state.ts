@@ -2,29 +2,44 @@ export const LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
 export const SLOT_COUNT = 10;
 
 export type RandomSource = () => number;
+export type LetterSlot = { kind: 'letter'; character: string };
+export type SpecialSlot = { kind: 'special' };
+export type SlotValue = LetterSlot | SpecialSlot;
 
-export const generateLetters = (
-  random: RandomSource = Math.random,
-): string[] => {
-  const pool = [...LETTERS];
-  for (let index = pool.length - 1; index > 0; index -= 1) {
+const shuffle = <T>(values: T[], random: RandomSource): T[] => {
+  for (let index = values.length - 1; index > 0; index -= 1) {
     const target = Math.floor(random() * (index + 1));
-    [pool[index], pool[target]] = [pool[target], pool[index]];
+    [values[index], values[target]] = [values[target], values[index]];
   }
-  return pool.slice(0, SLOT_COUNT);
+  return values;
+};
+
+export const generateSlots = (
+  random: RandomSource = Math.random,
+): SlotValue[] => {
+  const letters = shuffle([...LETTERS], random).slice(0, SLOT_COUNT - 1);
+  const specialIndex = Math.floor(random() * SLOT_COUNT);
+  const slots: SlotValue[] = letters.map((character) => ({
+    kind: 'letter',
+    character,
+  }));
+  slots.splice(specialIndex, 0, { kind: 'special' });
+  return slots;
 };
 
 export interface Landing {
-  character: string;
-  shouldReroll: boolean;
+  value: SlotValue;
+  volleyFinished: boolean;
+  specialPending: boolean;
 }
 
 export class BoardState {
-  letters: string[];
+  slots: SlotValue[];
   activeBalls = 0;
+  specialPending = false;
 
   constructor(private readonly random: RandomSource = Math.random) {
-    this.letters = generateLetters(random);
+    this.slots = generateSlots(random);
   }
 
   launch(): void {
@@ -35,9 +50,14 @@ export class BoardState {
     if (this.activeBalls === 0 || slot < 0 || slot >= SLOT_COUNT) {
       throw new Error('Invalid ball landing.');
     }
-    const character = this.letters[slot];
+    const value = this.slots[slot];
+    if (value.kind === 'special') this.specialPending = true;
     this.activeBalls -= 1;
-    return { character, shouldReroll: this.activeBalls === 0 };
+    return {
+      value,
+      volleyFinished: this.activeBalls === 0,
+      specialPending: this.specialPending,
+    };
   }
 
   abandon(): boolean {
@@ -50,6 +70,7 @@ export class BoardState {
     if (this.activeBalls > 0) {
       throw new Error('Cannot skip during an active volley.');
     }
-    this.letters = generateLetters(this.random);
+    this.slots = generateSlots(this.random);
+    this.specialPending = false;
   }
 }
