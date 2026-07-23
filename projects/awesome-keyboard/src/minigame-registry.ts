@@ -92,7 +92,7 @@ const updateShortsTimer = (timerWindow: BrowserWindow, seconds: number): void =>
   if (!timerWindow.isDestroyed()) {
     void timerWindow.webContents.executeJavaScript(
       `document.querySelector('#remaining').textContent = '${seconds}s';`,
-    ).catch(() => undefined);
+    ).catch((): void => undefined);
   }
 };
 
@@ -170,6 +170,28 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
     void timerWindow.loadURL(`data:text/html;charset=utf-8,${
       encodeURIComponent(shortsTimerDocument())
     }`);
+    const downloadedPlayer = track(new BrowserWindow({
+      x: mainDisplay.workArea.x + mainDisplay.workArea.width - 454,
+      y: mainDisplay.workArea.y + 112,
+      width: 430,
+      height: Math.min(760, mainDisplay.workArea.height - 136),
+      frame: false,
+      focusable: false,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      show: false,
+      backgroundColor: '#000000',
+      webPreferences: {
+        sandbox: true,
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    }));
+    downloadedPlayer.setAlwaysOnTop(true, 'screen-saver');
+    downloadedPlayer.once('ready-to-show', () => downloadedPlayer.showInactive());
+    void downloadedPlayer.loadURL(`data:text/html;charset=utf-8,${
+      encodeURIComponent(shortsPlayerDocument(videos))
+    }`);
     let seconds = 30;
     let loaded = false;
     let allowClose = false;
@@ -180,6 +202,7 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
         if (!blocker.isDestroyed()) blocker.destroy();
       });
       if (!timerWindow.isDestroyed()) timerWindow.destroy();
+      if (!downloadedPlayer.isDestroyed()) downloadedPlayer.destroy();
       mainWindow.restore();
       mainWindow.showInactive();
       resolve(result);
@@ -217,9 +240,7 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
         }
       }, 1000);
     });
-    void window.loadURL(`data:text/html;charset=utf-8,${
-      encodeURIComponent(shortsPlayerDocument(videos))
-    }`);
+    void window.loadURL('https://www.youtube.com/shorts');
   });
 
 const gooseConfigPath = (): string =>
@@ -237,7 +258,7 @@ const readGoosePath = (): string | null => {
 const chooseGoosePath = async (
   mainWindow: BrowserWindow,
 ): Promise<string | null> => {
-  while (true) {
+  for (;;) {
     const choice = await dialog.showMessageBox(mainWindow, {
       type: 'question',
       title: 'Desktop Goose setup',

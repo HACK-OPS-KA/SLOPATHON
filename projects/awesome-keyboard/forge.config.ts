@@ -14,7 +14,7 @@ import { rendererConfig } from './webpack.renderer.config';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    extraResource: ['./native/keyboard-blocker.exe'],
+    extraResource: ['./native/keyboard-blocker.exe', './assets/shorts'],
   },
   rebuildConfig: {},
   makers: [
