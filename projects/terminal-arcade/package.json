@@ -1,0 +1,26 @@
+{
+  "name": "terminal-arcade",
+  "version": "0.1.0",
+  "description": "Play Snake in your terminal while Claude Code thinks — the game yields the screen the instant the answer is ready.",
+  "bin": {
+    "arcade": "./bin/arcade.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin",
+    "src",
+    "hooks",
+    ".claude"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/fix-pty-perms.js",
+    "snake": "node src/games/snake.js",
+    "doctor": "node bin/arcade.js doctor"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "node-pty": "^1.0.0"
+  }
+}
