@@ -1,7 +1,11 @@
 import { execFile, spawn } from 'child_process';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { pathToFileURL } from 'url';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'fs';
+import { basename, dirname, join } from 'path';
 import {
   app,
   BrowserWindow,
@@ -50,8 +54,11 @@ const openUselessWebsites = ({ mainWindow }: MinigameContext): Promise<MinigameR
         y: 35 + index * 24,
         width: 760,
         height: 560,
+        alwaysOnTop: true,
+        minimizable: false,
         title: `Useless website ${index + 1}/10`,
       }));
+      window.setAlwaysOnTop(true, 'screen-saver');
       window.once('closed', () => {
         remaining -= 1;
         if (remaining === 0) {
@@ -65,27 +72,20 @@ const openUselessWebsites = ({ mainWindow }: MinigameContext): Promise<MinigameR
     });
   });
 
-const SHORTS_VIDEO_FILES = ['eRXE8Aebp7s.mp4', 'J9dvPQuHz-I.mp4'];
+const shortsAssetFolder = (): string => app.isPackaged
+  ? join(process.resourcesPath, 'shorts')
+  : join(app.getAppPath(), 'assets', 'shorts');
 
-const shortsVideoPaths = (): string[] => SHORTS_VIDEO_FILES.map((file) =>
-  app.isPackaged
-    ? join(process.resourcesPath, 'shorts', file)
-    : join(app.getAppPath(), 'assets', 'shorts', file));
-
-const shortsPlayerDocument = (paths: readonly string[]): string => {
-  const sources = JSON.stringify(paths.map((path) => pathToFileURL(path).href))
-    .replace(/</g, '\\u003c');
-  return `<!doctype html><html><head><meta charset="utf-8"><style>
-*{box-sizing:border-box}body{margin:0;background:#000;overflow:hidden}video{width:100vw;height:100vh;object-fit:cover}
-</style></head><body><video id="short" autoplay playsinline></video><script>
-const sources=${sources};let index=0;const video=document.querySelector('#short');
-function playNext(){video.src=sources[index++%sources.length];video.play().catch(()=>{})}
-playNext();setInterval(playNext,15000);
-</script></body></html>`;
+const shortsVideoPaths = (): string[] => {
+  const folder = shortsAssetFolder();
+  if (!existsSync(folder)) return [];
+  return readdirSync(folder)
+    .filter((file) => /\.(mp4|webm|mov|mkv)$/i.test(file))
+    .map((file) => join(folder, file));
 };
 
 const shortsTimerDocument = (): string => `<!doctype html><html><head><meta charset="utf-8"><style>
-*{box-sizing:border-box}body{margin:0;background:#050505;color:#fff;font:700 18px "Courier New",monospace;border:3px solid #ff0000;display:grid;place-items:center;height:100vh;letter-spacing:.08em}span{color:#ff3b30;font-size:30px}
+*{box-sizing:border-box}body{margin:0;background:#050505;color:#fff;font:700 18px "Courier New",monospace;border:4px solid #ff2020;display:grid;place-items:center;height:100vh;letter-spacing:.08em;box-shadow:inset 0 0 18px #ff0000}span{color:#ff3b30;font-size:38px;text-shadow:2px 2px #700}
 </style></head><body><div>SHORTS SENTENCE: <span id="remaining">30s</span></div></body></html>`;
 
 const updateShortsTimer = (timerWindow: BrowserWindow, seconds: number): void => {
@@ -93,13 +93,15 @@ const updateShortsTimer = (timerWindow: BrowserWindow, seconds: number): void =>
     void timerWindow.webContents.executeJavaScript(
       `document.querySelector('#remaining').textContent = '${seconds}s';`,
     ).catch((): void => undefined);
+    timerWindow.setAlwaysOnTop(true, 'screen-saver');
+    timerWindow.moveTop();
   }
 };
 
 const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
   new Promise((resolve) => {
     const videos = shortsVideoPaths();
-    if (!videos.every(existsSync)) {
+    if (videos.length === 0 || !videos.every(existsSync)) {
       resolve({ status: 'failed', message: 'SHORTS VIDEOS ARE MISSING' });
       return;
     }
@@ -152,8 +154,9 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
     const timerWindow = track(new BrowserWindow({
       x: mainDisplay.workArea.x + 24,
       y: mainDisplay.workArea.y + 24,
-      width: 310,
-      height: 76,
+      width: 370,
+      height: 88,
+      parent: window,
       frame: false,
       focusable: false,
       alwaysOnTop: true,
@@ -170,28 +173,42 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
     void timerWindow.loadURL(`data:text/html;charset=utf-8,${
       encodeURIComponent(shortsTimerDocument())
     }`);
-    const downloadedPlayer = track(new BrowserWindow({
-      x: mainDisplay.workArea.x + mainDisplay.workArea.width - 454,
-      y: mainDisplay.workArea.y + 112,
-      width: 430,
-      height: Math.min(760, mainDisplay.workArea.height - 136),
-      frame: false,
-      focusable: false,
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      show: false,
-      backgroundColor: '#000000',
-      webPreferences: {
-        sandbox: true,
-        contextIsolation: true,
-        nodeIntegration: false,
-      },
-    }));
-    downloadedPlayer.setAlwaysOnTop(true, 'screen-saver');
-    downloadedPlayer.once('ready-to-show', () => downloadedPlayer.showInactive());
-    void downloadedPlayer.loadURL(`data:text/html;charset=utf-8,${
-      encodeURIComponent(shortsPlayerDocument(videos))
-    }`);
+    const playerWidth = Math.min(360, Math.floor(mainDisplay.workArea.width / 3));
+    const playerHeight = Math.min(640, mainDisplay.workArea.height - 150);
+    const downloadedPlayers = videos.map((video, index) => {
+      const player = track(new BrowserWindow({
+        x: mainDisplay.workArea.x + mainDisplay.workArea.width
+          - playerWidth - 24 - index * (playerWidth + 16),
+        y: mainDisplay.workArea.y + 112,
+        width: playerWidth,
+        height: playerHeight,
+        parent: window,
+        frame: false,
+        focusable: false,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        show: false,
+        backgroundColor: '#000000',
+        webPreferences: {
+          sandbox: true,
+          contextIsolation: true,
+          nodeIntegration: false,
+        },
+      }));
+      player.setAlwaysOnTop(true, 'screen-saver');
+      player.once('ready-to-show', () => {
+        player.showInactive();
+        player.moveTop();
+        timerWindow.moveTop();
+      });
+      void player.loadFile(join(shortsAssetFolder(), 'player.html'), {
+        query: {
+          file: basename(video),
+          number: String(index + 1),
+        },
+      });
+      return player;
+    });
     let seconds = 30;
     let loaded = false;
     let allowClose = false;
@@ -202,7 +219,9 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
         if (!blocker.isDestroyed()) blocker.destroy();
       });
       if (!timerWindow.isDestroyed()) timerWindow.destroy();
-      if (!downloadedPlayer.isDestroyed()) downloadedPlayer.destroy();
+      downloadedPlayers.forEach((player) => {
+        if (!player.isDestroyed()) player.destroy();
+      });
       mainWindow.restore();
       mainWindow.showInactive();
       resolve(result);
@@ -228,6 +247,12 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
       window.setAlwaysOnTop(true, 'screen-saver');
       window.show();
       window.focus();
+      downloadedPlayers.forEach((player) => {
+        player.showInactive();
+        player.moveTop();
+      });
+      timerWindow.showInactive();
+      timerWindow.moveTop();
       window.setTitle(`YouTube Shorts · ${seconds}s remaining`);
       updateShortsTimer(timerWindow, seconds);
       timer = setInterval(() => {
