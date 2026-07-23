@@ -1,0 +1,198 @@
+// Calendar Council — data model
+// SQLite for zero-config local reliability. Enum-like fields are stored as
+// String; rapidly-changing mock structures use Json (see design brief).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  name                String
+  displayName         String?
+  passwordHash        String?
+  avatar              String?
+  timezone            String   @default("Europe/Berlin")
+  onboardingCompleted Boolean  @default(false)
+  subscriptionPlan    String   @default("observer") // observer | governed | institutional
+  isDemo              Boolean  @default(false)
+  trustScore          Int      @default(50)
+  autonomyScore       Int      @default(50)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  preferences   UserPreferences?
+  priorities    PriorityProfile?
+  agents        AgentConfiguration[]
+  integrations  Integration[]
+  negotiations  Negotiation[]
+  incidents     Incident[]
+  events        CalendarEvent[]
+  notifications Notification[]
+}
+
+model UserPreferences {
+  id                  String @id @default(cuid())
+  userId              String @unique
+  user                User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wakeTime            String @default("07:00")
+  sleepTime           String @default("23:30")
+  workStart           String @default("09:00")
+  workEnd             String @default("18:00")
+  maximumDailyMeetings Int    @default(3)
+  travelTolerance     String @default("requires_review")
+  spendingLimit       Int    @default(8) // in EUR
+  socialBatteryLimit  Int    @default(2)
+  riskToleranceJson   String @default("{}") // per-category risk labels
+  comedyIntensity     String @default("balanced") // dry | balanced | unhinged
+  demoSpeed           String @default("presentation") // realistic | presentation | unhinged
+  theme               String @default("system")
+  reducedMotion       Boolean @default(false)
+  consensusThreshold  Int     @default(60)
+  chaosCanVote        Boolean @default(true)
+}
+
+model PriorityProfile {
+  id                 String @id @default(cuid())
+  userId             String @unique
+  user               User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sleepWeight        Int    @default(15)
+  careerWeight       Int    @default(15)
+  fitnessWeight      Int    @default(10)
+  relationshipsWeight Int   @default(12)
+  socialWeight       Int    @default(8)
+  financeWeight      Int    @default(10)
+  healthWeight       Int    @default(10)
+  productivityWeight Int    @default(10)
+  convenienceWeight  Int    @default(5)
+  spontaneityWeight  Int    @default(5)
+}
+
+model AgentConfiguration {
+  id                 String  @id @default(cuid())
+  userId             String
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentType          String  // sleep | career | gym | ...
+  influence          Int     @default(50)
+  vetoEnabled        Boolean @default(false)
+  aggression         Int     @default(50)
+  messageFrequency   Int     @default(50)
+  interrogationEnabled Boolean @default(true)
+  canTriggerAppeals  Boolean @default(false)
+  canViewFinancials  Boolean @default(true)
+  notificationsEnabled Boolean @default(true)
+  tone               String  @default("default")
+  enabled            Boolean @default(true)
+  customInstructions String?
+
+  @@unique([userId, agentType])
+}
+
+model Integration {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String
+  status       String   @default("disconnected") // connected | simulated | requires_review | excessive | disconnected
+  isMock       Boolean  @default(true)
+  permissions  String   @default("[]") // JSON array
+  lastSyncedAt DateTime?
+
+  @@unique([userId, provider])
+}
+
+model Negotiation {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  requestJson    String   @default("{}") // full structured request
+  requestedStart DateTime?
+  requestedEnd   DateTime?
+  location       String?
+  attendees      String?
+  purpose        String?
+  category       String?
+  estimatedCost  Float?
+  status         String   @default("initial_review")
+  phase          Int      @default(1)
+  consensus      Int      @default(40)
+  messageCount   Int      @default(0)
+  objectionCount Int      @default(0)
+  topObjector    String?
+  userComplied   Boolean?
+  hadIncident    Boolean  @default(false)
+  deliberationMs Int      @default(0)
+  finalDecision  String?  // approved | provisional | rejected | ...
+  finalStart     DateTime?
+  finalEnd       DateTime?
+  dataJson       String   @default("{}") // messages, positions, slots, metrics for replay
+  isSeed         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  decision  Decision?
+  incidents Incident[]
+}
+
+model Decision {
+  id            String   @id @default(cuid())
+  negotiationId String   @unique
+  negotiation   Negotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
+  result        String
+  rationale     String?
+  conditions    String   @default("[]") // JSON array
+  recommendation String?
+  issuedAt      DateTime @default(now())
+  acceptedAt    DateTime?
+  ignoredAt     DateTime?
+  appealedAt    DateTime?
+}
+
+model Incident {
+  id            String   @id @default(cuid())
+  negotiationId String?
+  negotiation   Negotiation? @relation(fields: [negotiationId], references: [id], onDelete: SetNull)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String
+  severity      String   @default("critical")
+  triggerMessage String?
+  status        String   @default("already_happened")
+  correctiveActions String @default("[]") // JSON array
+  trustScoreChange Int    @default(-38)
+  createdAt     DateTime @default(now())
+}
+
+model CalendarEvent {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  negotiationId String?
+  title         String
+  start         DateTime
+  end           DateTime
+  location      String?
+  state         String   @default("approved") // approved | rejected | pending | unauthorized | recovery | focus_block | review
+  conditions    String   @default("[]") // JSON array
+  complianceStatus String @default("pending")
+  metaJson      String   @default("{}")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentType String?
+  title     String
+  body      String?
+  kind      String   @default("info") // info | objection | escalation | incident | decision
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
