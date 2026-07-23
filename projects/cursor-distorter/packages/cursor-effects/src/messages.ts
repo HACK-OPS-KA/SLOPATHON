@@ -1,0 +1,36 @@
+/** Speech-bubble lines for the Social Cursor, keyed by "voice". */
+export const CURSOR_MESSAGES: Record<string, string[]> = {
+  default: [
+    "Are you sure?",
+    "That button?",
+    "We have other options.",
+    "You seem tense.",
+    "I think you missed.",
+    "Let me help.",
+    "No.",
+    "Interesting choice.",
+    "That looked intentional.",
+    "I'm doing my best.",
+    "Almost.",
+    "Bold.",
+    "Was that on purpose?",
+  ],
+  delegator: [
+    "Someone else can handle this.",
+    "Let's circle back.",
+    "Not my action item.",
+    "I'll take point on the easy one.",
+    "Delegating this to future you.",
+    "We should sync on this.",
+    "Parking this for now.",
+  ],
+  dealer: [
+    "So close!",
+    "That's a rare one.",
+    "Feeling lucky?",
+    "The house appreciates you.",
+    "Streak incoming.",
+    "One more click.",
+    "Statistically, you're due.",
+  ],
+};

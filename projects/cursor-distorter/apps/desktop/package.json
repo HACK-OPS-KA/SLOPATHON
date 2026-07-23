@@ -1,0 +1,73 @@
+{
+  "name": "@cursor-distorter/desktop",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cursor Distorter desktop application (Electron + React).",
+  "author": "Cursor Distorter Labs",
+  "main": "dist-electron/main.js",
+  "build": {
+    "//entitlements": "hardenedRuntime is on; electron-builder supplies its default entitlements. For notarized System Distortion Mode you must ship an entitlements.mac.plist granting com.apple.security.automation.apple-events (and the app must request Accessibility at runtime).",
+    "appId": "com.cursordistorter.app",
+    "productName": "Cursor Distorter",
+    "files": [
+      "dist/**",
+      "dist-electron/**"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": "arm64"
+        },
+        {
+          "target": "zip",
+          "arch": "arm64"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:web": "cross-env NO_ELECTRON=1 vite --port 5199 --host",
+    "build": "vite build",
+    "build:web": "cross-env NO_ELECTRON=1 vite build --outDir dist-web",
+    "preview:web": "cross-env NO_ELECTRON=1 vite preview --outDir dist-web --port 4599",
+    "package": "cross-env NO_ELECTRON= vite build && electron-builder",
+    "package:dir": "cross-env NO_ELECTRON= vite build && electron-builder --dir",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@cursor-distorter/chaos-engine": "workspace:*",
+    "@cursor-distorter/cursor-effects": "workspace:*",
+    "@cursor-distorter/shared-types": "workspace:*",
+    "@cursor-distorter/ui": "workspace:*",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.15.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "cross-env": "^7.0.3",
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.0.7",
+    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  }
+}
