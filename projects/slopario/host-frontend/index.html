@@ -109,6 +109,32 @@
             min-height: 0;
         }
 
+        .start-button {
+            appearance: none;
+            border: 0;
+            border-radius: 999px;
+            padding: 16px 22px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #07111f;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+            box-shadow: 0 14px 30px rgba(124, 231, 255, 0.24);
+        }
+
+        .start-button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 34px rgba(124, 231, 255, 0.3);
+        }
+
+        .start-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+            box-shadow: none;
+        }
+
         .card {
             border: 1px solid var(--panel-border);
             background: var(--panel);
@@ -199,6 +225,60 @@
             color: var(--danger);
         }
 
+        .screen {
+            display: none;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        body[data-state="lobby"] .lobby-screen,
+        body[data-state="ingame"] .game-screen {
+            display: block;
+        }
+
+        body[data-state="ingame"] .lobby-screen {
+            display: none;
+        }
+
+        .game-screen {
+            position: fixed;
+            inset: 0;
+            background: #050b16;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .game-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            pointer-events: none;
+        }
+
+        .overlay-chip {
+            pointer-events: none;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(8, 15, 28, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(14px);
+            color: var(--text);
+            font-size: 0.92rem;
+        }
+
         @media (max-width: 920px) {
             body {
                 overflow: auto;
@@ -222,11 +302,18 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+
+            .game-overlay {
+                left: 14px;
+                right: 14px;
+                top: 14px;
+                flex-direction: column;
+            }
         }
     </style>
 </head>
-<body>
-    <main class="shell">
+<body data-state="lobby">
+    <main class="screen lobby-screen shell">
         <header class="topbar">
             <div class="brand">
                 <p class="eyebrow">Slopario Host Lobby</p>
@@ -256,6 +343,8 @@
                     <div class="metric-label">What players do</div>
                     <div class="metric-value">Scan the code to open the client on a phone.</div>
                 </div>
+
+                <button class="start-button" id="startButton" type="button" disabled>Start game</button>
             </article>
 
             <article class="card qr-card" aria-live="polite">
@@ -271,16 +360,41 @@
         </footer>
     </main>
 
+    <section class="screen game-screen" aria-label="Ingame view">
+        <canvas id="gameCanvas"></canvas>
+        <div class="game-overlay">
+            <div class="overlay-chip" id="gameStatus">Waiting for game data…</div>
+            <div class="overlay-chip" id="gameSessionInfo"></div>
+        </div>
+    </section>
+
     <script>
         const statusEl = document.getElementById('status');
         const sessionIdEl = document.getElementById('sessionId');
         const screenSizeEl = document.getElementById('screenSize');
         const joinLinkEl = document.getElementById('joinLink');
         const footerNoteEl = document.getElementById('footerNote');
+        const startButtonEl = document.getElementById('startButton');
+        const gameStatusEl = document.getElementById('gameStatus');
+        const gameSessionInfoEl = document.getElementById('gameSessionInfo');
+        const gameCanvas = document.getElementById('gameCanvas');
+        const gameContext = gameCanvas.getContext('2d');
         const qrContainer = document.getElementById('qrcode');
 
         let currentSession = null;
         let lastQrSize = 0;
+        let ws = null;
+        let lastGameState = { players: [], food: [] };
+        let mapSize = { width: window.innerWidth, height: window.innerHeight };
+        let renderPending = false;
+
+        function setAppState(state) {
+            document.body.dataset.state = state;
+        }
+
+        function setGameStatus(message) {
+            gameStatusEl.textContent = message;
+        }
 
         function getBackendBaseUrl() {
             if (window.location.origin && window.location.origin !== 'null') {
@@ -303,7 +417,8 @@
         }
 
         function getClientUrl(sessionId) {
-            return `${window.location.protocol}//${window.location.host}/client/?s=${encodeURIComponent(sessionId)}`;
+            const host = window.location.host || 'localhost:6969';
+            return `${window.location.protocol}//${host}/client/?s=${encodeURIComponent(sessionId)}`;
         }
 
         function setStatus(message, isError = false) {
@@ -338,6 +453,199 @@
             });
         }
 
+        function getWebSocketUrl(sessionId) {
+            const backendBase = getBackendBaseUrl();
+            const wsBase = backendBase.replace(/^http/i, 'ws');
+            return `${wsBase}/ws/view/${encodeURIComponent(sessionId)}`;
+        }
+
+        function resizeCanvas() {
+            const cssWidth = window.innerWidth;
+            const cssHeight = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+
+            gameCanvas.width = Math.max(1, Math.round(cssWidth * dpr));
+            gameCanvas.height = Math.max(1, Math.round(cssHeight * dpr));
+            gameCanvas.style.width = `${cssWidth}px`;
+            gameCanvas.style.height = `${cssHeight}px`;
+            gameContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            if (document.body.dataset.state === 'ingame') {
+                scheduleRender();
+            }
+        }
+
+        function fitWorld() {
+            const width = mapSize.width || window.innerWidth;
+            const height = mapSize.height || window.innerHeight;
+            const canvasWidth = window.innerWidth;
+            const canvasHeight = window.innerHeight;
+            const scale = Math.min(canvasWidth / width, canvasHeight / height);
+            const drawWidth = width * scale;
+            const drawHeight = height * scale;
+
+            return {
+                scale,
+                offsetX: (canvasWidth - drawWidth) / 2,
+                offsetY: (canvasHeight - drawHeight) / 2,
+                drawWidth,
+                drawHeight,
+            };
+        }
+
+        function drawGrid(ctx, scale, offsetX, offsetY, worldWidth, worldHeight) {
+            const gridStep = 50;
+            const lineWidth = Math.max(1, Math.round(scale));
+
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.lineWidth = lineWidth;
+
+            for (let x = 0; x <= worldWidth; x += gridStep) {
+                const px = x * scale;
+                ctx.beginPath();
+                ctx.moveTo(px, 0);
+                ctx.lineTo(px, worldHeight * scale);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y <= worldHeight; y += gridStep) {
+                const py = y * scale;
+                ctx.beginPath();
+                ctx.moveTo(0, py);
+                ctx.lineTo(worldWidth * scale, py);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawCircle(ctx, x, y, radius, color, scale, offsetX, offsetY) {
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.arc(offsetX + x * scale, offsetY + y * scale, Math.max(1.5, radius * scale), 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function renderGameState() {
+            renderPending = false;
+
+            const ctx = gameContext;
+            const { width: worldWidth, height: worldHeight } = mapSize;
+            const { scale, offsetX, offsetY, drawWidth, drawHeight } = fitWorld();
+
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            ctx.fillStyle = '#050b16';
+            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+            ctx.fillRect(offsetX, offsetY, drawWidth, drawHeight);
+
+            drawGrid(ctx, scale, offsetX, offsetY, worldWidth, worldHeight);
+
+            for (const food of lastGameState.food || []) {
+                drawCircle(ctx, food.x, food.y, food.size / 2, '#ffffff', scale, offsetX, offsetY);
+            }
+
+            for (const player of lastGameState.players || []) {
+                drawCircle(ctx, player.x, player.y, player.size / 2, player.color || '#7ce7ff', scale, offsetX, offsetY);
+            }
+        }
+
+        function scheduleRender() {
+            if (renderPending) {
+                return;
+            }
+
+            renderPending = true;
+            requestAnimationFrame(renderGameState);
+        }
+
+        function transitionToIngame() {
+            setAppState('ingame');
+            gameSessionInfoEl.textContent = currentSession ? `Session ${currentSession}` : '';
+            resizeCanvas();
+            scheduleRender();
+        }
+
+        function closeWebSocket() {
+            if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+                ws.close();
+            }
+            ws = null;
+        }
+
+        function connectHostWebSocket() {
+            if (!currentSession) {
+                setStatus('Session is not ready yet', true);
+                return;
+            }
+
+            if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+                return;
+            }
+
+            closeWebSocket();
+
+            const socketUrl = getWebSocketUrl(currentSession);
+            setStatus('Connecting to game…');
+            startButtonEl.disabled = true;
+
+            ws = new WebSocket(socketUrl);
+
+            ws.addEventListener('open', () => {
+                setStatus('Starting game…');
+                ws?.send('start');
+            });
+
+            ws.addEventListener('message', (event) => {
+                if (typeof event.data !== 'string') {
+                    return;
+                }
+
+                let payload;
+
+                try {
+                    payload = JSON.parse(event.data);
+                } catch {
+                    return;
+                }
+
+                if (payload?.type === 'init') {
+                    mapSize = {
+                        width: Number(payload.map_width) || window.innerWidth,
+                        height: Number(payload.map_height) || window.innerHeight,
+                    };
+                    setGameStatus(`Map ${mapSize.width} × ${mapSize.height}`);
+                    transitionToIngame();
+                    return;
+                }
+
+                if (Array.isArray(payload?.players) && Array.isArray(payload?.food)) {
+                    lastGameState = payload;
+                    if (document.body.dataset.state !== 'ingame') {
+                        transitionToIngame();
+                    }
+                    setGameStatus(`Players: ${payload.players.length} | Food: ${payload.food.length}`);
+                    scheduleRender();
+                }
+            });
+
+            ws.addEventListener('close', () => {
+                if (document.body.dataset.state === 'ingame') {
+                    setGameStatus('Game connection closed');
+                }
+                ws = null;
+                startButtonEl.disabled = false;
+            });
+
+            ws.addEventListener('error', () => {
+                setStatus('WebSocket connection failed', true);
+                startButtonEl.disabled = false;
+            });
+        }
+
         async function createSession() {
             const backendBase = getBackendBaseUrl();
             const { width, height } = getScreenSize();
@@ -364,6 +672,7 @@
             sessionIdEl.textContent = currentSession;
             joinLinkEl.textContent = joinUrl;
             setStatus('Session ready');
+            startButtonEl.disabled = false;
             renderQr(joinUrl);
 
             return joinUrl;
@@ -375,14 +684,27 @@
             }
 
             renderQr(getClientUrl(currentSession));
+            if (document.body.dataset.state === 'ingame') {
+                resizeCanvas();
+            }
         }
 
         window.addEventListener('resize', () => {
             requestAnimationFrame(rerenderQr);
         });
 
+        startButtonEl.addEventListener('click', () => {
+            connectHostWebSocket();
+        });
+
+        window.addEventListener('beforeunload', () => {
+            closeWebSocket();
+        });
+
         window.addEventListener('load', async () => {
             try {
+                setAppState('lobby');
+                resizeCanvas();
                 await createSession();
             } catch (error) {
                 console.error(error);
