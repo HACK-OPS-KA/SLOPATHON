@@ -15,7 +15,7 @@ struct ControllerInput {
 
 /// Sends a text line to the controller with newline delimiter.
 async fn send_line(sink: &mut futures::stream::SplitSink<WebSocket, Message>, line: &str) -> Result<(), ()> {
-    let msg = Message::Text(format!("{}\n", line));
+    let msg = Message::Text(format!("{}\n", line).into());
     sink.send(msg).await.map_err(|_| ())
 }
 

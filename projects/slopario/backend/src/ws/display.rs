@@ -22,7 +22,7 @@ pub async fn handle_display(
     // 1. Init-Nachricht mit Map-Größe senden
     let init = InitState::new(map_width, map_height);
     let init_json = serde_json::to_string(&init).unwrap();
-    if socket.send(Message::Text(init_json)).await.is_err() {
+    if socket.send(Message::Text(init_json.into())).await.is_err() {
         return;
     }
 
@@ -53,7 +53,7 @@ pub async fn handle_display(
                 match result {
                     Ok(state) => {
                         let json = serde_json::to_string(&state).unwrap();
-                        if socket.send(Message::Text(json)).await.is_err() {
+                        if socket.send(Message::Text(json.into())).await.is_err() {
                             break;
                         }
                     }

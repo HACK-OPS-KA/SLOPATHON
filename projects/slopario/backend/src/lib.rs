@@ -18,7 +18,6 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
-use tower_http::cors::CorsLayer;
 
 use crate::game::start_game_loop;
 use crate::session::{SessionMap, create_session_map, generate_session_id};
@@ -161,7 +160,7 @@ async fn handle_display_with_session(socket: WebSocket, session_id: String, stat
     }
 }
 
-/// Build the router and app state. Exposed for testing.
+/// Build the router and app state WITHOUT CORS. Exposed for testing.
 pub fn build_app() -> (Router, AppState) {
     let state = AppState {
         sessions: create_session_map(),
@@ -173,9 +172,15 @@ pub fn build_app() -> (Router, AppState) {
         .route("/ws/view/{session_id}", get(ws_display_handler))
         .route("/host", get(serve_host))
         .route("/client", get(serve_client))
-        .layer(CorsLayer::permissive())
         .with_state(state.clone());
 
+    (app, state)
+}
+
+/// Build the router WITH CORS. Used by main.rs.
+fn build_app_with_cors() -> (Router, AppState) {
+    let (app, state) = build_app();
+    let app = app.layer(tower_http::cors::CorsLayer::permissive());
     (app, state)
 }
 
@@ -198,7 +203,7 @@ pub const PORT: u16 = 6969;
 
 /// Run the default server (used by main.rs)
 pub async fn run_default_server() {
-    let (app, _state) = build_app();
+    let (app, _state) = build_app_with_cors();
 
     let addr = format!("0.0.0.0:{}", PORT);
     let listener = tokio::net::TcpListener::bind(&addr)
