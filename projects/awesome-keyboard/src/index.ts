@@ -48,8 +48,11 @@ const createWindow = (): void => {
     frame: false,
     resizable: false,
     alwaysOnTop: true,
-    focusable: true,
-    skipTaskbar: false,
+    // Pointer input still reaches a non-focusable Electron window, but it
+    // leaves the previously active application as the foreground target for
+    // the generated key press.
+    focusable: false,
+    skipTaskbar: true,
     show: false,
     backgroundColor: '#efe3ca',
     webPreferences: {
@@ -66,8 +69,13 @@ const createWindow = (): void => {
     event.preventDefault();
   });
 
+  // Only expose the taskbar button while minimized.  Keeping it hidden while
+  // visible prevents the keyboard from behaving like a normal foreground app.
+  mainWindow.on('minimize', () => mainWindow?.setSkipTaskbar(false));
+  mainWindow.on('restore', () => mainWindow?.setSkipTaskbar(true));
+
   void mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.once('ready-to-show', () => mainWindow?.showInactive());
 };
 
 app.whenReady().then(() => {
@@ -115,7 +123,7 @@ app.whenReady().then(() => {
   mainWindow.once('ready-to-show', () => {
     void ensureDesktopGoosePath(mainWindow as BrowserWindow);
   });
-  installHook(() => app.quit());
+  installHook();
 });
 
 app.on('window-all-closed', () => app.quit());

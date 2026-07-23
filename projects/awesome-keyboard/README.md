@@ -33,10 +33,10 @@ npm install
 npm start
 ```
 
-Sloppy Keyboard takes keyboard focus when launched, and ignores physical
-keystrokes while it has focus. Close the window to return input to the previous
-application; use the on-screen minimize and close buttons in the title bar to
-control the app.
+Sloppy Keyboard does not take keyboard focus, so clicks leave the previously
+active application ready to receive generated keystrokes. Physical keystrokes
+remain blocked while the keyboard is open. Use the on-screen minimize and close
+buttons in the title bar to control the app.
 
 ## Verify
 

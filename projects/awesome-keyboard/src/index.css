@@ -491,13 +491,6 @@ canvas {
   animation: key-flash 260ms steps(2, end);
 }
 
-.hotkey {
-  grid-column: 1 / -1;
-  padding: 3px 6px;
-  border-top: 1px solid var(--win-mid);
-  color: #404040;
-}
-
 @keyframes key-flash {
   50% {
     color: #fff;

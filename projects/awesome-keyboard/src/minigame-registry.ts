@@ -5,6 +5,7 @@ import {
   app,
   BrowserWindow,
   dialog,
+  screen,
   shell,
 } from 'electron';
 import type {
@@ -59,11 +60,34 @@ const openUselessWebsites = async (): Promise<MinigameResult> => {
 const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
   new Promise((resolve) => {
     mainWindow.minimize();
+    const mainDisplay = screen.getDisplayMatching(mainWindow.getBounds());
+    const blockerWindows = screen.getAllDisplays()
+      .filter((display) => display.id !== mainDisplay.id)
+      .map((display) => {
+        const blocker = track(new BrowserWindow({
+          ...display.bounds,
+          frame: false,
+          focusable: false,
+          alwaysOnTop: true,
+          skipTaskbar: true,
+          show: false,
+          backgroundColor: '#000000',
+        }));
+        blocker.setAlwaysOnTop(true, 'screen-saver');
+        blocker.showInactive();
+        return blocker;
+      });
     const window = track(secureRemoteWindow({
-      width: 560,
-      height: 860,
+      ...mainDisplay.bounds,
+      frame: false,
       focusable: true,
       alwaysOnTop: true,
+      fullscreen: true,
+      kiosk: true,
+      minimizable: false,
+      maximizable: false,
+      autoHideMenuBar: true,
+      skipTaskbar: true,
       title: 'YouTube Shorts · loading…',
     }));
     let seconds = 30;
@@ -72,6 +96,9 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
     let timer: NodeJS.Timeout | undefined;
     const finish = (result: MinigameResult): void => {
       if (timer) clearInterval(timer);
+      blockerWindows.forEach((blocker) => {
+        if (!blocker.isDestroyed()) blocker.destroy();
+      });
       mainWindow.restore();
       mainWindow.showInactive();
       resolve(result);
@@ -82,12 +109,19 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
     window.on('closed', () => finish(loaded
       ? { status: 'completed', message: 'SHORTS SENTENCE COMPLETE' }
       : { status: 'failed', message: 'SHORTS FAILED TO LOAD' }));
+    window.on('blur', () => {
+      if (!allowClose && loaded && !window.isDestroyed()) {
+        window.show();
+        window.focus();
+      }
+    });
     window.webContents.once('did-fail-load', () => {
       allowClose = true;
       window.close();
     });
     window.webContents.once('did-finish-load', () => {
       loaded = true;
+      window.setAlwaysOnTop(true, 'screen-saver');
       window.show();
       window.focus();
       window.setTitle(`YouTube Shorts · ${seconds}s remaining`);

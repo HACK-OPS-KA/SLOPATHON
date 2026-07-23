@@ -4,8 +4,15 @@ import path from 'path';
 import fs from 'fs';
 
 let child: ChildProcess | null = null;
-let exitHandler: (() => void) | null = null;
 let inputQueue: Promise<unknown> = Promise.resolve();
+
+// Allow Windows to fully remove/install the low-level hook around a synthetic
+// input event.  The previous immediate hand-off occasionally caught the key.
+const HOOK_RELEASE_DELAY_MS = 80;
+const HOOK_REINSTALL_DELAY_MS = 120;
+const delay = (ms: number): Promise<void> => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
 
 const exePath = (): string => {
   const dev = path.join(app.getAppPath(), 'native', 'keyboard-blocker.exe');
@@ -24,9 +31,8 @@ const buildIfMissing = (): boolean => {
   }
 };
 
-export const installHook = (onExit: () => void): void => {
+export const installHook = (): void => {
   if (child) return;
-  exitHandler = onExit;
 
   if (!buildIfMissing()) return;
 
@@ -37,10 +43,7 @@ export const installHook = (onExit: () => void): void => {
 
     child.stdout?.on('data', (data: Buffer) => {
       buffer += data.toString();
-      if (buffer.includes('EXIT')) {
-        child = null;
-        onExit();
-      }
+      if (buffer.includes('EXIT')) child = null;
     });
 
     child.on('error', () => { child = null; });
@@ -51,7 +54,6 @@ export const installHook = (onExit: () => void): void => {
 };
 
 export const uninstallHook = (): void => {
-  exitHandler = null;
   child?.kill();
   child = null;
 };
@@ -78,9 +80,11 @@ export const typeWithHookTemporarilyDisabled = <T>(
   const task = inputQueue.then(async () => {
     await stopHook();
     try {
+      await delay(HOOK_RELEASE_DELAY_MS);
       return await type();
     } finally {
-      if (exitHandler) installHook(exitHandler);
+      await delay(HOOK_REINSTALL_DELAY_MS);
+      installHook();
     }
   });
   inputQueue = task.catch((): void => undefined);

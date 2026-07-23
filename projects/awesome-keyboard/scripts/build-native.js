@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const src = path.join(root, 'native', 'keyboard-blocker.cpp');
 const out = path.join(root, 'native', 'keyboard-blocker.exe');
 
-if (fs.existsSync(out)) {
+if (fs.existsSync(out) && fs.statSync(out).mtimeMs >= fs.statSync(src).mtimeMs) {
   process.exit(0);
 }
 

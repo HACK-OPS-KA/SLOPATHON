@@ -3,7 +3,9 @@ import type { SpecialKey, TypeResult } from './contracts';
 
 let typingQueue: Promise<unknown> = Promise.resolve();
 
-keyboard.config.autoDelayMs = 0;
+// Keep generated key events far enough apart for the foreground application
+// and the low-level blocker hand-off to process them reliably.
+keyboard.config.autoDelayMs = 35;
 
 export const typeCharacter = (character: string): Promise<TypeResult> => {
   if (!/^[a-z]$/.test(character)) {

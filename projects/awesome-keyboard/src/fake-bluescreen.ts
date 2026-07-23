@@ -35,8 +35,12 @@ export const openFakeBluescreen = (
 ): Promise<void> => new Promise((resolve) => {
   const window = new BrowserWindow({
     fullscreen: true,
+    kiosk: true,
+    frame: false,
     focusable: true,
     alwaysOnTop: true,
+    autoHideMenuBar: true,
+    show: false,
     webPreferences: {
       sandbox: true,
       contextIsolation: true,
@@ -45,6 +49,13 @@ export const openFakeBluescreen = (
   });
   onCreated?.(window);
   window.on('closed', resolve);
+  window.once('ready-to-show', () => {
+    // Explicitly enter fullscreen before the window is shown so it never
+    // briefly appears as a regular desktop window.
+    window.setFullScreen(true);
+    window.show();
+    window.focus();
+  });
   void window.loadURL(`data:text/html;charset=utf-8,${
     encodeURIComponent(fakeBluescreenDocument())
   }`);
