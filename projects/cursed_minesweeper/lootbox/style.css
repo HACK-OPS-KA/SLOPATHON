@@ -1,0 +1,419 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Comic Sans MS", "Trebuchet MS", system-ui, sans-serif;
+  background: linear-gradient(135deg, #ff00cc, #3333ff, #00ffcc);
+  background-size: 400% 400%;
+  animation: slop-gradient 12s ease infinite;
+  color: #111;
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+}
+
+@keyframes slop-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hero {
+  max-width: 720px;
+  margin: 0 auto 20px;
+  text-align: center;
+  background: rgba(255, 255, 0, 0.85);
+  border: 6px dashed #ff0066;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 8px 8px 0 #000;
+}
+
+.hero-title {
+  margin: 0 0 6px;
+  font-size: clamp(1.6rem, 5vw, 2.6rem);
+  color: #d10000;
+  text-shadow: 2px 2px 0 #fff, 4px 4px 0 #000;
+  letter-spacing: 1px;
+}
+
+.hero-tagline {
+  margin: 0 0 12px;
+  font-weight: bold;
+  font-style: italic;
+  color: #0000cc;
+}
+
+.hero-blurb {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.versions {
+  max-width: 720px;
+  margin: 0 auto 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.version-link {
+  display: inline-block;
+  padding: 8px 14px;
+  background: #fff;
+  border: 3px solid #000;
+  border-radius: 999px;
+  color: #000;
+  text-decoration: none;
+  font-weight: bold;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.version-link:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #000;
+}
+
+.version-link.current {
+  background: #00ff88;
+}
+
+.game {
+  max-width: max-content;
+  margin: 0 auto;
+  background: #c0c0c0;
+  border: 4px solid #7b7b7b;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.35);
+}
+
+.game-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #bdbdbd;
+  border: 3px inset #fff;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.hud-readout {
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  font-size: 1.5rem;
+  background: #000;
+  color: #ff2b2b;
+  padding: 2px 8px;
+  border-radius: 4px;
+  min-width: 62px;
+  text-align: center;
+}
+
+.hud-reset {
+  font-size: 1.4rem;
+  width: 44px;
+  height: 44px;
+  border: 3px outset #fff;
+  background: #c0c0c0;
+  cursor: pointer;
+}
+
+.hud-reset:active {
+  border-style: inset;
+}
+
+.game-controls {
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+.game-controls select {
+  font: inherit;
+  padding: 4px;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 9), 30px);
+  gap: 0;
+  background: #7b7b7b;
+  border: 3px inset #fff;
+  width: max-content;
+}
+
+.cell {
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  font-size: 1rem;
+  line-height: 1;
+  border: 3px outset #fff;
+  background: #c0c0c0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cell.revealed {
+  border: 1px solid #9b9b9b;
+  background: #d6d6d6;
+  cursor: default;
+}
+
+.cell[data-value="1"] { color: #0000ff; }
+.cell[data-value="2"] { color: #008200; }
+.cell[data-value="3"] { color: #ff0000; }
+.cell[data-value="4"] { color: #000084; }
+.cell[data-value="5"] { color: #840000; }
+.cell[data-value="6"] { color: #008284; }
+.cell[data-value="7"] { color: #000000; }
+.cell[data-value="8"] { color: #808080; }
+
+.game-hint {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: #333;
+  max-width: 340px;
+}
+
+.site-footer {
+  margin: 32px auto 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.lootbox-buy {
+  display: block;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 12px;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #111;
+  background: linear-gradient(90deg, #ffd200, #ff8c00, #ff0066, #ffd200);
+  background-size: 300% 100%;
+  border: 3px solid #000;
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 #000;
+  cursor: pointer;
+  animation: lootbox-shimmer 3s linear infinite;
+}
+
+.lootbox-buy:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 #000;
+}
+
+.lootbox-buy:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #000;
+}
+
+.lootbox-buy s {
+  opacity: 0.7;
+}
+
+.lootbox-price-strike {
+  color: #d10000;
+  text-shadow: 1px 1px 0 #fff;
+}
+
+@keyframes lootbox-shimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: 300% 0; }
+}
+
+.lootbox-disclaimer {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 0.7rem;
+  color: #444;
+}
+
+.lootbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  animation: lootbox-fade-in 0.25s ease both;
+}
+
+.lootbox-overlay[hidden] {
+  display: none;
+}
+
+@keyframes lootbox-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lootbox-stage {
+  position: relative;
+  width: min(90vw, 420px);
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lootbox-crate {
+  position: relative;
+  font-size: 8rem;
+  text-align: center;
+  animation: lootbox-shake 0.5s ease-in-out infinite;
+}
+
+.lootbox-crate.opening {
+  animation: lootbox-burst 0.6s ease-out forwards;
+}
+
+.lootbox-crate-lid {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: transform 0.4s ease;
+}
+
+.lootbox-crate.opening .lootbox-crate-lid {
+  transform: translate(-50%, -200px) rotate(40deg);
+  opacity: 0;
+}
+
+.lootbox-sparkles {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lootbox-crate.opening .lootbox-sparkles {
+  animation: lootbox-pop 0.6s ease-out forwards;
+}
+
+@keyframes lootbox-shake {
+  0%, 100% { transform: rotate(-4deg) scale(1); }
+  25% { transform: rotate(4deg) scale(1.05); }
+  50% { transform: rotate(-3deg) scale(0.98); }
+  75% { transform: rotate(3deg) scale(1.05); }
+}
+
+@keyframes lootbox-burst {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.4); }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+@keyframes lootbox-pop {
+  0% { transform: scale(0.3); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.lootbox-prize {
+  position: relative;
+  width: min(88vw, 360px);
+  padding: 28px 20px;
+  text-align: center;
+  background: #fffbe6;
+  border: 6px solid #000;
+  border-radius: 18px;
+  box-shadow: 0 0 0 6px #ffd200, 8px 8px 0 #000;
+  animation: lootbox-prize-in 0.5s cubic-bezier(0.2, 1.4, 0.5, 1) both;
+}
+
+.lootbox-prize[hidden] {
+  display: none;
+}
+
+@keyframes lootbox-prize-in {
+  from { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.lootbox-rarity {
+  display: inline-block;
+  padding: 4px 14px;
+  margin-bottom: 12px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: #fff;
+  border-radius: 999px;
+  background: #888;
+}
+
+.lootbox-prize.common .lootbox-rarity { background: #6a8f3c; }
+.lootbox-prize.uncommon .lootbox-rarity { background: #2f7fd1; }
+.lootbox-prize.rare .lootbox-rarity {
+  background: linear-gradient(90deg, #b400ff, #ff0066);
+}
+.lootbox-prize.legendary .lootbox-rarity {
+  background: linear-gradient(90deg, #ff8c00, #ffd200, #ff0066);
+  color: #111;
+}
+
+.lootbox-prize.legendary {
+  box-shadow: 0 0 0 6px #ffd200, 0 0 40px 10px #ff8c00, 8px 8px 0 #000;
+  animation: lootbox-prize-in 0.5s cubic-bezier(0.2, 1.4, 0.5, 1) both,
+    lootbox-legendary-glow 1.2s ease-in-out infinite 0.5s;
+}
+
+@keyframes lootbox-legendary-glow {
+  0%, 100% { box-shadow: 0 0 0 6px #ffd200, 0 0 40px 10px #ff8c00, 8px 8px 0 #000; }
+  50% { box-shadow: 0 0 0 6px #fff, 0 0 70px 20px #ffd200, 8px 8px 0 #000; }
+}
+
+.lootbox-prize-icon {
+  font-size: 5rem;
+  line-height: 1;
+}
+
+.lootbox-prize-title {
+  margin-top: 8px;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #d10000;
+  text-shadow: 1px 1px 0 #fff;
+}
+
+.lootbox-prize-desc {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.lootbox-claim {
+  margin-top: 18px;
+  padding: 10px 24px;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #111;
+  background: #00ff88;
+  border: 3px solid #000;
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 #000;
+  cursor: pointer;
+}
+
+.lootbox-claim:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #000;
+}

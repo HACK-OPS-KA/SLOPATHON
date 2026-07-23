@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📺 AD-SUPPORTED MINESWEEPER 📺</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1 class="hero-title">📺💰 AD-SUPPORTED MINESWEEPER 💰📺</h1>
+      <p class="hero-tagline">this square reveal is brought to you by capitalism™</p>
+      <p class="hero-blurb">
+        enjoy premium minesweeping at the unbeatable price of your attention.
+        every 2–3 moves, gameplay is interrupted by a deeply suspicious
+        locally generated image ad. your timer pauses, but your dignity does
+        not recover.
+      </p>
+    </header>
+
+    <!-- SHARED NAV: every variant adds ONE <a> line here. keep it additive. -->
+    <nav class="versions" aria-label="Minesweeper versions">
+      <a class="version-link" href="../vanilla/index.html">🟩 Original (Vanilla)</a>
+      <a class="version-link current" href="../ad-minesweeper/index.html">📺 Ad-Supported</a>
+      <a class="version-link" href="../adversarial-minesweeper/index.html">⚔️ Player vs Bot</a>
+      <a class="version-link" href="../anxiety/index.html">😰 Anxiety</a>
+      <a class="version-link" href="../captcha-minesweeper/index.html">🤖 Captcha Every Click</a>
+      <a class="version-link" href="../crawler/index.html">🕷️ Crawler</a>
+      <a class="version-link" href="../far-vision/index.html">🔭 Far Vision</a>
+      <a class="version-link" href="../gravity/index.html">🪐 Gravity</a>
+      <a class="version-link" href="../lootbox/index.html">🎁 Lootbox</a>
+      <a class="version-link" href="../multiplier/index.html">✖️ Multiplier</a>
+      <a class="version-link" href="../snake/index.html">🐍 Snake</a>
+      <a class="version-link" href="../sycophant/index.html">🥰 Sycophant</a>
+      <a class="version-link" href="../try-not-to-win/index.html">🙅 TryNotToWin</a>
+      <a class="version-link" href="../wanderlust/index.html">🧭 Wanderlust</a>
+    </nav>
+
+    <main class="game" aria-label="Playable minesweeper">
+      <div class="game-hud">
+        <div class="hud-readout" id="mine-counter">010</div>
+        <button class="hud-reset" id="reset" aria-label="New game">🙂</button>
+        <div class="hud-readout" id="timer">000</div>
+      </div>
+
+      <div class="game-controls">
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty">
+          <option value="beginner">Beginner (9×9, 10)</option>
+          <option value="intermediate">Intermediate (16×16, 40)</option>
+          <option value="expert">Expert (16×30, 99)</option>
+        </select>
+      </div>
+
+      <div class="board" id="board"></div>
+
+      <p class="game-hint">
+        Left-click to reveal · Right-click to flag 🚩 · Click a number with
+        enough flags around it to chord · Advertisement every 2–3 valid moves.
+      </p>
+    </main>
+
+    <footer class="site-footer">made in a slopathon. do not sell to nintendo.</footer>
+
+    <div class="ad-backdrop" id="ad-break" hidden>
+      <section class="ad-card" role="dialog" aria-modal="true" aria-labelledby="ad-title">
+        <div class="ad-banner">
+          <span>SPONSORED INTERRUPTION</span>
+          <span id="ad-number">AD #1</span>
+        </div>
+        <h2 id="ad-title">A WORD FROM A CORPORATION</h2>
+        <div class="ad-image-shell">
+          <img id="ad-image" src="" alt="" />
+        </div>
+        <p class="ad-name" id="ad-name">Loading premium marketing content...</p>
+        <div class="ad-actions">
+          <button id="skip-ad" type="button" disabled>SKIP IN 8</button>
+        </div>
+        <p class="ad-disclaimer">
+          Minesweeper Premium removes zero advertisements for €49.99/month.
+        </p>
+      </section>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>
