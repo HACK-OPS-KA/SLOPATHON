@@ -1,0 +1,214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* --- Light: "Chamber Parchment" --- */
+    --background: 40 30% 97%;
+    --foreground: 222 24% 12%;
+
+    --card: 40 33% 99%;
+    --card-foreground: 222 24% 12%;
+
+    --popover: 40 33% 99%;
+    --popover-foreground: 222 24% 12%;
+
+    --primary: 222 30% 14%;
+    --primary-foreground: 40 30% 97%;
+
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 222 24% 16%;
+
+    --muted: 40 18% 91%;
+    --muted-foreground: 222 10% 42%;
+
+    --accent: 40 24% 90%;
+    --accent-foreground: 222 24% 16%;
+
+    --destructive: 0 62% 46%;
+    --destructive-foreground: 40 30% 97%;
+
+    --border: 38 16% 85%;
+    --input: 38 16% 85%;
+    --ring: 38 55% 45%;
+
+    /* Ceremonial gold — used sparingly for seals, marks, key CTAs */
+    --gold: 38 58% 44%;
+    --gold-foreground: 40 40% 98%;
+    --gold-muted: 40 44% 82%;
+
+    /* Governance status semantics */
+    --approve: 148 42% 38%;
+    --oppose: 8 62% 48%;
+    --veto: 356 68% 42%;
+    --conditional: 34 72% 44%;
+    --undecided: 220 12% 52%;
+
+    /* Sidebar */
+    --sidebar: 222 28% 12%;
+    --sidebar-foreground: 40 24% 88%;
+    --sidebar-border: 222 20% 20%;
+    --sidebar-accent: 38 55% 52%;
+
+    --radius: 0.7rem;
+  }
+
+  .dark {
+    /* --- Dark: "Midnight Chamber" --- */
+    --background: 222 30% 8%;
+    --foreground: 40 26% 90%;
+
+    --card: 222 26% 11%;
+    --card-foreground: 40 26% 90%;
+
+    --popover: 222 28% 10%;
+    --popover-foreground: 40 26% 90%;
+
+    --primary: 40 30% 92%;
+    --primary-foreground: 222 30% 10%;
+
+    --secondary: 222 18% 17%;
+    --secondary-foreground: 40 26% 90%;
+
+    --muted: 222 16% 16%;
+    --muted-foreground: 220 12% 62%;
+
+    --accent: 222 18% 18%;
+    --accent-foreground: 40 26% 90%;
+
+    --destructive: 0 58% 52%;
+    --destructive-foreground: 40 30% 96%;
+
+    --border: 222 16% 20%;
+    --input: 222 16% 22%;
+    --ring: 42 68% 56%;
+
+    --gold: 42 72% 58%;
+    --gold-foreground: 222 30% 10%;
+    --gold-muted: 40 30% 30%;
+
+    --approve: 148 46% 48%;
+    --oppose: 8 66% 58%;
+    --veto: 356 72% 58%;
+    --conditional: 36 78% 56%;
+    --undecided: 220 12% 58%;
+
+    --sidebar: 222 32% 7%;
+    --sidebar-foreground: 40 22% 84%;
+    --sidebar-border: 222 20% 16%;
+    --sidebar-accent: 42 70% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: hsl(var(--gold) / 0.28);
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  /* Faint paper grain for marketing/parchment surfaces */
+  .paper-grain {
+    background-image: radial-gradient(
+      hsl(var(--foreground) / 0.025) 1px,
+      transparent 1px
+    );
+    background-size: 4px 4px;
+  }
+
+  /* Atmospheric field for hero / dark sections */
+  .chamber-field {
+    background:
+      radial-gradient(1200px 600px at 12% -10%, hsl(var(--gold) / 0.10), transparent 60%),
+      radial-gradient(1000px 700px at 100% 0%, hsl(222 60% 30% / 0.22), transparent 55%),
+      linear-gradient(180deg, hsl(222 32% 9%), hsl(222 34% 6%));
+  }
+
+  .hairline {
+    @apply border border-border/70;
+  }
+
+  .gold-rule {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--gold) / 0.6),
+      transparent
+    );
+    height: 1px;
+  }
+
+  /* Official document seal ring */
+  .seal-ring {
+    box-shadow:
+      0 0 0 1px hsl(var(--gold) / 0.5),
+      0 0 0 6px hsl(var(--gold) / 0.08);
+  }
+
+  /* Monospace "official record" label */
+  .record-label {
+    @apply font-mono uppercase tracking-[0.18em] text-[10px] text-muted-foreground;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Custom scrollbars */
+  .scroll-slim {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+  }
+  .scroll-slim::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scroll-slim::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 999px;
+  }
+  .scroll-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Respect reduced motion globally as a safety net */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
