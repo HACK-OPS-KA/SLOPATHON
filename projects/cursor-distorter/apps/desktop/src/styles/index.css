@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 800px at 15% -10%, rgba(79, 107, 246, 0.16), transparent 55%),
+      radial-gradient(900px 700px at 110% 10%, rgba(169, 131, 255, 0.12), transparent 55%),
+      #05060a;
+    color: #e8ecf6;
+    font-family: theme("fontFamily.sans");
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+  }
+
+  /* The whole app hides the real OS cursor over interactive surfaces so the
+     rendered fake cursors are the only ones the user perceives. */
+  .cd-hide-native-cursor,
+  .cd-hide-native-cursor * {
+    cursor: none !important;
+  }
+
+  ::selection {
+    background: rgba(79, 107, 246, 0.35);
+  }
+}
+
+@layer components {
+  .glass {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: theme("boxShadow.glass");
+    backdrop-filter: blur(14px);
+  }
+
+  .glass-strong {
+    background: linear-gradient(180deg, rgba(19, 24, 38, 0.92), rgba(10, 12, 20, 0.92));
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: theme("boxShadow.glass");
+    backdrop-filter: blur(18px);
+  }
+
+  .hairline {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .stat-num {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .shimmer-text {
+    background: linear-gradient(
+      90deg,
+      rgba(232, 236, 246, 0.55) 0%,
+      rgba(232, 236, 246, 1) 50%,
+      rgba(232, 236, 246, 0.55) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 2.4s linear infinite;
+  }
+}
+
+@layer components {
+  /* Speech bubble beside a rendered cursor (Social Cursor). */
+  .cd-bubble {
+    margin-left: 20px;
+    margin-top: -6px;
+    max-width: 220px;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.25;
+    color: #0b0e18;
+    background: #f4f6ff;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+    animation: cd-bubble-in 140ms ease-out;
+  }
+  @keyframes cd-bubble-in {
+    from {
+      opacity: 0;
+      transform: translateY(3px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Small fake loading spinner that trails the cursor. */
+  .cd-mini-spinner {
+    margin-left: 22px;
+    margin-top: 2px;
+    width: 15px;
+    height: 15px;
+    border-radius: 999px;
+    border: 2px solid rgba(120, 150, 255, 0.35);
+    border-top-color: #7f9bff;
+    animation: spin-slow 0.9s linear infinite;
+  }
+
+  /* Click feedback ripple. */
+  .cd-click-ripple {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 999px;
+    pointer-events: none;
+    animation: cd-ripple 500ms ease-out forwards;
+  }
+  .cd-click-real {
+    border: 2px solid rgba(120, 150, 255, 0.9);
+  }
+  .cd-click-fake {
+    border: 2px dashed rgba(255, 191, 71, 0.9);
+  }
+  .cd-click-ghost {
+    border: 2px solid rgba(169, 131, 255, 0.7);
+  }
+  @keyframes cd-ripple {
+    from {
+      opacity: 0.9;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 0;
+      transform: scale(3.4);
+    }
+  }
+
+  /* Sandbox controls: hover + click-flash feedback driven by the chaos loop. */
+  .cd-ctl {
+    transition:
+      transform 90ms ease,
+      background-color 120ms ease,
+      box-shadow 120ms ease,
+      border-color 120ms ease;
+  }
+  .cd-ctl[data-cd-hover] {
+    box-shadow: 0 0 0 2px rgba(120, 150, 255, 0.45);
+  }
+  .cd-ctl[data-cd-flash] {
+    box-shadow: 0 0 0 3px rgba(120, 150, 255, 0.85);
+    filter: brightness(1.15);
+  }
+}
+
+/* Thin, discreet scrollbars that match the SaaS aesthetic. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}

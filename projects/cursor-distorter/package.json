@@ -1,0 +1,30 @@
+{
+  "name": "cursor-distorter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A precision-engineered productivity obstruction platform.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @cursor-distorter/desktop dev",
+    "dev:web": "pnpm --filter @cursor-distorter/desktop dev:web",
+    "build": "pnpm --filter @cursor-distorter/desktop build",
+    "build:web": "pnpm --filter @cursor-distorter/desktop build:web",
+    "preview:web": "pnpm --filter @cursor-distorter/desktop preview:web",
+    "package": "pnpm --filter @cursor-distorter/desktop package",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.base.json --noEmit",
+    "recover": "node scripts/recover.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "jsdom": "^25.0.1",
+    "playwright": "^1.61.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

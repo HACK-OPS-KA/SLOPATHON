@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@cursor-distorter/shared-types": ["packages/shared-types/src/index.ts"],
+      "@cursor-distorter/shared-types/*": ["packages/shared-types/src/*"],
+      "@cursor-distorter/chaos-engine": ["packages/chaos-engine/src/index.ts"],
+      "@cursor-distorter/chaos-engine/*": ["packages/chaos-engine/src/*"],
+      "@cursor-distorter/cursor-effects": ["packages/cursor-effects/src/index.ts"],
+      "@cursor-distorter/cursor-effects/*": ["packages/cursor-effects/src/*"],
+      "@cursor-distorter/ui": ["packages/ui/src/index.ts"],
+      "@cursor-distorter/ui/*": ["packages/ui/src/*"]
+    }
+  },
+  "include": [
+    "packages/*/src",
+    "apps/desktop/src",
+    "apps/desktop/electron"
+  ],
+  "exclude": ["node_modules", "**/dist", "**/dist-electron", "**/release"]
+}
