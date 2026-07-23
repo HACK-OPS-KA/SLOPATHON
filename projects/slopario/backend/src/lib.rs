@@ -14,10 +14,11 @@ use axum::{
         ws::{WebSocket, WebSocketUpgrade},
     },
     response::{Html, IntoResponse},
-    routing::get,
+    routing::{any, get},
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
+use tower_http::cors::CorsLayer;
 
 use crate::game::start_game_loop;
 use crate::session::{SessionMap, create_session_map, generate_session_id};
@@ -93,7 +94,7 @@ pub async fn create_session_handler(
     })
 }
 
-/// Controller-WebSocket: /ws/controller/:session_id
+/// Controller-WebSocket: /ws/controller/:session_id (any HTTP method)
 async fn ws_controller_handler(
     ws: WebSocketUpgrade,
     Path(session_id): Path<String>,
@@ -116,7 +117,7 @@ async fn handle_controller_with_session(socket: WebSocket, session_id: String, s
     }
 }
 
-/// Display-WebSocket: /ws/view/:session_id
+/// Display-WebSocket: /ws/view/:session_id (any HTTP method)
 async fn ws_display_handler(
     ws: WebSocketUpgrade,
     Path(session_id): Path<String>,
@@ -160,7 +161,7 @@ async fn handle_display_with_session(socket: WebSocket, session_id: String, stat
     }
 }
 
-/// Build the router and app state WITHOUT CORS. Exposed for testing.
+/// Build the router and app state with CORS enabled.
 pub fn build_app() -> (Router, AppState) {
     let state = AppState {
         sessions: create_session_map(),
@@ -168,19 +169,14 @@ pub fn build_app() -> (Router, AppState) {
 
     let app = Router::new()
         .route("/api/session", get(create_session_handler))
-        .route("/ws/controller/{session_id}", get(ws_controller_handler))
-        .route("/ws/view/{session_id}", get(ws_display_handler))
+        // WebSocket routes accept any HTTP method for broad browser compatibility
+        .route("/ws/controller/{session_id}", any(ws_controller_handler))
+        .route("/ws/view/{session_id}", any(ws_display_handler))
         .route("/host", get(serve_host))
         .route("/client", get(serve_client))
+        .layer(CorsLayer::permissive())
         .with_state(state.clone());
 
-    (app, state)
-}
-
-/// Build the router WITH CORS. Used by main.rs.
-fn build_app_with_cors() -> (Router, AppState) {
-    let (app, state) = build_app();
-    let app = app.layer(tower_http::cors::CorsLayer::permissive());
     (app, state)
 }
 
@@ -203,7 +199,7 @@ pub const PORT: u16 = 6969;
 
 /// Run the default server (used by main.rs)
 pub async fn run_default_server() {
-    let (app, _state) = build_app_with_cors();
+    let (app, _state) = build_app();
 
     let addr = format!("0.0.0.0:{}", PORT);
     let listener = tokio::net::TcpListener::bind(&addr)

@@ -1,7 +1,7 @@
 # Progress: Slopario
 
 ## What Works
-- ✅ Rust project initialized with Axum + WebSocket
+- ✅ Rust project initialized with Axum 0.8 + WebSocket
 - ✅ Session creation with configurable map size (`GET /api/session?width=1920&height=1080`)
 - ✅ Controller WebSocket (`/ws/controller/{id}`)
   - Receives direction input as JSON
@@ -24,19 +24,19 @@
   - `/client` → client-frontend/index.html
 - ✅ CORS enabled (permissive for development)
 - ✅ API.md documenting frozen communication format
-- ✅ Memory bank initialized
+- ✅ Dependencies upgraded: axum 0.7→0.8, tower-http 0.5→0.7
+- ✅ 17 unit tests passing (game logic: movement, food, PvP, ranking, GameState)
+- ✅ 1 integration test (E2E) passing (full session lifecycle with display + 3 controllers)
 
 ## What's Left to Build
 - ❌ Frontend development (separate agent)
-- ❌ End-to-end testing
-- ❌ Potential bug fixes in game logic edge cases
 - ❌ Production hardening (session cleanup, error handling)
 
 ## Current Status
-The backend is feature-complete and compiles without errors. The API is frozen. Frontend development is being handled by a separate agent.
+Backend is feature-complete with 18 passing tests (17 unit + 1 integration). The API is frozen. Frontend development is handled by a separate agent.
 
 ## Known Issues
-- 6 compiler warnings (unused imports/variables, dead code) - all expected for current development stage
+- 5 compiler warnings (unused imports/variables, dead code) - expected for current stage
 - `create_mock_food` in food.rs is unused (food is generated in Session::new directly)
 - `SessionState::Running` variant is never constructed (only compared against)
 - `Session.id` and `Session.state` fields are never read externally
@@ -47,5 +47,6 @@ The backend is feature-complete and compiles without errors. The API is frozen. 
 - Moved from `[u8; 3]` to `String` for colors (HTML hex format)
 - Moved map size from GameState to InitState (fixed at session creation)
 - Changed controller communication from single "start" to newline-delimited protocol (lobby/ingame/message)
-- Game loop now starts on first display connect, not at session creation
-- Game only updates when state == Running (display sends "start")
+- Game loop starts on first display connect, only updates when `state == Running`
+- Upgraded axum 0.7→0.8, tower-http 0.5→0.7 (fixed `{param}` route syntax + `Utf8Bytes` migration)
+- Added integration test with real HTTP/WS connections via tokio-tungstenite + reqwest
