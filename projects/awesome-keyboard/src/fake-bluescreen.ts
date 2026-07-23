@@ -17,22 +17,22 @@ input{margin-top:12px;width:250px;padding:8px;font-size:24px;border:0;background
 <button class="key" data-number="4">4</button><button class="key" data-number="5">5</button><button class="key" data-number="6">6</button>
 <button class="key" data-number="7">7</button><button class="key" data-number="8">8</button><button class="key" data-number="9">9</button>
 <button class="key" data-action="clear">C</button><button class="key" data-number="0">0</button><button class="key" data-action="backspace">⌫</button>
-<button class="key key--wide" data-action="submit">Submit</button><button class="key" data-action="close">×</button>
+<button class="key key--wide" data-action="submit">Submit</button>
 </div><p id="progress" aria-live="polite"></p></div><p class="meta">Use the on-screen keypad to complete the recovery checks.</p>
 </main><script>
-const questions=${data};let current=0,escapeTimer;
+const questions=${data};let current=0;
 const prompt=document.querySelector('#prompt'),answer=document.querySelector('#answer'),progress=document.querySelector('#progress');
 function show(){prompt.textContent='Recovery check: '+questions[current].text+' = ?';progress.textContent='Check '+(current+1)+' of 3';answer.value=''}
-function submit(){if(Number(answer.value)===questions[current].answer){current++;if(current===3){window.close();return}show()}else{progress.textContent='Incorrect. Check '+(current+1)+' of 3';answer.value=''}}
-document.querySelector('.keypad').addEventListener('click',e=>{const button=e.target.closest('button');if(!button)return;const{number,action}=button.dataset;if(number){answer.value+=number;return}if(action==='clear'){answer.value='';return}if(action==='backspace'){answer.value=answer.value.slice(0,-1);return}if(action==='submit'){submit();return}if(action==='close')window.close()});
-addEventListener('keydown',e=>{if(e.key==='Escape'&&!escapeTimer)escapeTimer=setTimeout(()=>window.close(),3000)});
-addEventListener('keyup',e=>{if(e.key==='Escape'){clearTimeout(escapeTimer);escapeTimer=null}});show();
+function submit(){if(Number(answer.value)===questions[current].answer){current++;if(current===3){document.title='BLUESCREEN_RECOVERED';return}show()}else{document.title='BLUESCREEN_FATAL_MISTAKE'}}
+document.querySelector('.keypad').addEventListener('click',e=>{const button=e.target.closest('button');if(!button)return;const{number,action}=button.dataset;if(number){answer.value+=number;return}if(action==='clear'){answer.value='';return}if(action==='backspace'){answer.value=answer.value.slice(0,-1);return}if(action==='submit')submit()});show();
 </script></body></html>`;
 };
 
 export const openFakeBluescreen = (
   onCreated?: (window: BrowserWindow) => void,
+  onFatalMistake?: () => void,
 ): Promise<void> => new Promise((resolve) => {
+  let allowClose = false;
   const window = new BrowserWindow({
     fullscreen: true,
     kiosk: true,
@@ -48,7 +48,19 @@ export const openFakeBluescreen = (
     },
   });
   onCreated?.(window);
+  window.on('close', (event) => {
+    if (!allowClose) event.preventDefault();
+  });
   window.on('closed', resolve);
+  window.on('page-title-updated', (event, title) => {
+    event.preventDefault();
+    if (title === 'BLUESCREEN_RECOVERED') {
+      allowClose = true;
+      window.close();
+    } else if (title === 'BLUESCREEN_FATAL_MISTAKE') {
+      onFatalMistake?.();
+    }
+  });
   window.once('ready-to-show', () => {
     // Explicitly enter fullscreen before the window is shown so it never
     // briefly appears as a regular desktop window.

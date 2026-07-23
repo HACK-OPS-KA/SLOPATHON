@@ -1,11 +1,13 @@
-import { spawn } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
+import { pathToFileURL } from 'url';
 import {
   app,
   BrowserWindow,
   dialog,
   screen,
+  session,
   shell,
 } from 'electron';
 import type {
@@ -37,28 +39,70 @@ const track = (window: BrowserWindow): BrowserWindow => {
   return window;
 };
 
-const openUselessWebsites = async (): Promise<MinigameResult> => {
-  const urls = sampleDistinct(USELESS_WEBSITES, 10);
-  urls.forEach((url, index) => {
-    const window = track(secureRemoteWindow({
-      x: 40 + index * 28,
-      y: 35 + index * 24,
-      width: 760,
-      height: 560,
-      title: `Useless website ${index + 1}/10`,
-    }));
-    void window.loadURL(url).finally(() => {
-      if (!window.isDestroyed()) window.show();
+const openUselessWebsites = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
+  new Promise((resolve) => {
+    const urls = sampleDistinct(USELESS_WEBSITES, 10);
+    let remaining = urls.length;
+    mainWindow.hide();
+    urls.forEach((url, index) => {
+      const window = track(secureRemoteWindow({
+        x: 40 + index * 28,
+        y: 35 + index * 24,
+        width: 760,
+        height: 560,
+        title: `Useless website ${index + 1}/10`,
+      }));
+      window.once('closed', () => {
+        remaining -= 1;
+        if (remaining === 0) {
+          mainWindow.showInactive();
+          resolve({ status: 'completed', message: 'USELESS WINDOWS CLEARED' });
+        }
+      });
+      void window.loadURL(url).finally(() => {
+        if (!window.isDestroyed()) window.show();
+      });
     });
   });
-  return {
-    status: 'completed',
-    message: 'TEN USELESS WINDOWS DEPLOYED',
-  };
+
+const SHORTS_VIDEO_FILES = ['eRXE8Aebp7s.mp4', 'J9dvPQuHz-I.mp4'];
+
+const shortsVideoPaths = (): string[] => SHORTS_VIDEO_FILES.map((file) =>
+  app.isPackaged
+    ? join(process.resourcesPath, 'shorts', file)
+    : join(app.getAppPath(), 'assets', 'shorts', file));
+
+const shortsPlayerDocument = (paths: readonly string[]): string => {
+  const sources = JSON.stringify(paths.map((path) => pathToFileURL(path).href))
+    .replace(/</g, '\\u003c');
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}body{margin:0;background:#000;overflow:hidden}video{width:100vw;height:100vh;object-fit:cover}
+</style></head><body><video id="short" autoplay playsinline></video><script>
+const sources=${sources};let index=0;const video=document.querySelector('#short');
+function playNext(){video.src=sources[index++%sources.length];video.play().catch(()=>{})}
+playNext();setInterval(playNext,15000);
+</script></body></html>`;
+};
+
+const shortsTimerDocument = (): string => `<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}body{margin:0;background:#050505;color:#fff;font:700 18px "Courier New",monospace;border:3px solid #ff0000;display:grid;place-items:center;height:100vh;letter-spacing:.08em}span{color:#ff3b30;font-size:30px}
+</style></head><body><div>SHORTS SENTENCE: <span id="remaining">30s</span></div></body></html>`;
+
+const updateShortsTimer = (timerWindow: BrowserWindow, seconds: number): void => {
+  if (!timerWindow.isDestroyed()) {
+    void timerWindow.webContents.executeJavaScript(
+      `document.querySelector('#remaining').textContent = '${seconds}s';`,
+    ).catch(() => undefined);
+  }
 };
 
 const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
   new Promise((resolve) => {
+    const videos = shortsVideoPaths();
+    if (!videos.every(existsSync)) {
+      resolve({ status: 'failed', message: 'SHORTS VIDEOS ARE MISSING' });
+      return;
+    }
     mainWindow.minimize();
     const mainDisplay = screen.getDisplayMatching(mainWindow.getBounds());
     const blockerWindows = screen.getAllDisplays()
@@ -77,7 +121,13 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
         blocker.showInactive();
         return blocker;
       });
-    const window = track(secureRemoteWindow({
+    const shortsSession = session.fromPartition('persist:sloppy-youtube-shorts', {
+      cache: true,
+    });
+    shortsSession.setPermissionCheckHandler(() => false);
+    shortsSession.setPermissionRequestHandler((_contents, _permission, reply) =>
+      reply(false));
+    const window = track(new BrowserWindow({
       ...mainDisplay.bounds,
       frame: false,
       focusable: true,
@@ -89,7 +139,37 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
       autoHideMenuBar: true,
       skipTaskbar: true,
       title: 'YouTube Shorts · loading…',
+      show: false,
+      webPreferences: {
+        sandbox: true,
+        nodeIntegration: false,
+        contextIsolation: true,
+        webSecurity: true,
+        session: shortsSession,
+      },
     }));
+    window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    const timerWindow = track(new BrowserWindow({
+      x: mainDisplay.workArea.x + 24,
+      y: mainDisplay.workArea.y + 24,
+      width: 310,
+      height: 76,
+      frame: false,
+      focusable: false,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      show: false,
+      webPreferences: {
+        sandbox: true,
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    }));
+    timerWindow.setAlwaysOnTop(true, 'screen-saver');
+    timerWindow.once('ready-to-show', () => timerWindow.showInactive());
+    void timerWindow.loadURL(`data:text/html;charset=utf-8,${
+      encodeURIComponent(shortsTimerDocument())
+    }`);
     let seconds = 30;
     let loaded = false;
     let allowClose = false;
@@ -99,6 +179,7 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
       blockerWindows.forEach((blocker) => {
         if (!blocker.isDestroyed()) blocker.destroy();
       });
+      if (!timerWindow.isDestroyed()) timerWindow.destroy();
       mainWindow.restore();
       mainWindow.showInactive();
       resolve(result);
@@ -125,16 +206,20 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
       window.show();
       window.focus();
       window.setTitle(`YouTube Shorts · ${seconds}s remaining`);
+      updateShortsTimer(timerWindow, seconds);
       timer = setInterval(() => {
         seconds -= 1;
         window.setTitle(`YouTube Shorts · ${seconds}s remaining`);
+        updateShortsTimer(timerWindow, seconds);
         if (seconds <= 0) {
           allowClose = true;
           window.close();
         }
       }, 1000);
     });
-    void window.loadURL('https://www.youtube.com/shorts');
+    void window.loadURL(`data:text/html;charset=utf-8,${
+      encodeURIComponent(shortsPlayerDocument(videos))
+    }`);
   });
 
 const gooseConfigPath = (): string =>
@@ -152,29 +237,31 @@ const readGoosePath = (): string | null => {
 const chooseGoosePath = async (
   mainWindow: BrowserWindow,
 ): Promise<string | null> => {
-  const choice = await dialog.showMessageBox(mainWindow, {
-    type: 'question',
-    title: 'Desktop Goose setup',
-    message: 'Desktop Goose is not bundled because its license forbids redistribution.',
-    detail: 'Download it from the official page, select GooseDesktop.exe, or cancel.',
-    buttons: ['Open official download', 'Select GooseDesktop.exe', 'Cancel'],
-    defaultId: 0,
-    cancelId: 2,
-  });
-  if (choice.response === 0) {
-    await shell.openExternal('https://samperson.itch.io/desktop-goose?download');
-    return null;
+  while (true) {
+    const choice = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      title: 'Desktop Goose setup',
+      message: 'Desktop Goose is not bundled because its license forbids redistribution.',
+      detail: 'Download it from the official page, select GooseDesktop.exe, or cancel.',
+      buttons: ['Open official download', 'Select GooseDesktop.exe', 'Cancel'],
+      defaultId: 0,
+      cancelId: 2,
+    });
+    if (choice.response === 0) {
+      await shell.openExternal('https://samperson.itch.io/desktop-goose?download');
+      continue;
+    }
+    if (choice.response !== 1) return null;
+    const selected = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select GooseDesktop.exe',
+      properties: ['openFile'],
+      filters: [{ name: 'Windows executable', extensions: ['exe'] }],
+    });
+    const executablePath = selected.filePaths[0];
+    if (selected.canceled || !executablePath) continue;
+    writeFileSync(gooseConfigPath(), JSON.stringify({ executablePath }), 'utf8');
+    return executablePath;
   }
-  if (choice.response !== 1) return null;
-  const selected = await dialog.showOpenDialog(mainWindow, {
-    title: 'Select GooseDesktop.exe',
-    properties: ['openFile'],
-    filters: [{ name: 'Windows executable', extensions: ['exe'] }],
-  });
-  const executablePath = selected.filePaths[0];
-  if (selected.canceled || !executablePath) return null;
-  writeFileSync(gooseConfigPath(), JSON.stringify({ executablePath }), 'utf8');
-  return executablePath;
 };
 
 /** Prompts during app startup so the minigame can launch without setup UI. */
@@ -205,6 +292,10 @@ const runGoose = async (): Promise<MinigameResult> => {
   }
 };
 
+const shutDownLaptop = (): void => {
+  execFile('shutdown.exe', ['/s', '/t', '0'], () => undefined);
+};
+
 const descriptors = new Map(MINIGAMES.map((game) => [game.id, game]));
 const descriptor = (id: MinigameId): MinigameDescriptor => {
   const game = descriptors.get(id);
@@ -224,10 +315,10 @@ const registry = new Map<MinigameId, MinigameHandler>([
     descriptor: descriptor('desktop-goose'),
     run: runGoose,
   }],
-  ['fake-bluescreen', {
-    descriptor: descriptor('fake-bluescreen'),
+  ['bluescreen', {
+    descriptor: descriptor('bluescreen'),
     run: async () => {
-      await openFakeBluescreen(track);
+      await openFakeBluescreen(track, shutDownLaptop);
       return { status: 'completed', message: 'RECOVERY COMPLETE' };
     },
   }],

@@ -24,8 +24,8 @@ export const MINIGAMES: readonly MinigameDescriptor[] = [
     accent: '#00a8a8',
   },
   {
-    id: 'fake-bluescreen',
-    label: 'Fake bluescreen',
+    id: 'bluescreen',
+    label: 'Bluescreen',
     description: 'Solve three sums to recover.',
     accent: '#0000aa',
   },

@@ -17,7 +17,7 @@ describe('minigame draw', () => {
   });
 
   it('validates only registry IDs', () => {
-    expect(isMinigameId('fake-bluescreen')).toBe(true);
+    expect(isMinigameId('bluescreen')).toBe(true);
     expect(isMinigameId('not-a-game')).toBe(false);
     expect(isMinigameId(null)).toBe(false);
   });

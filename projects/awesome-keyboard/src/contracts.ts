@@ -12,7 +12,7 @@ export const MINIGAME_IDS = [
   'useless-websites',
   'youtube-shorts',
   'desktop-goose',
-  'fake-bluescreen',
+  'bluescreen',
 ] as const;
 
 export type MinigameId = typeof MINIGAME_IDS[number];
