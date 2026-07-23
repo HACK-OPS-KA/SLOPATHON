@@ -490,18 +490,3 @@ canvas {
 .typed strong.pop {
   animation: key-flash 260ms steps(2, end);
 }
-
-@keyframes key-flash {
-  50% {
-    color: #fff;
-    background: var(--win-blue);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 1ms !important;
-  }
-}

@@ -33,6 +33,15 @@ npm install
 npm start
 ```
 
+To expose the manual minigame launcher during development:
+
+```bash
+npm start -- --debug-minigames
+```
+
+Packaged builds accept the same `--debug-minigames` command-line flag. Without
+the flag, the launcher is hidden and its dedicated IPC endpoint rejects calls.
+
 Sloppy Keyboard does not take keyboard focus, so clicks leave the previously
 active application ready to receive generated keystrokes. Physical keystrokes
 remain blocked while the keyboard is open. Use the on-screen minimize and close

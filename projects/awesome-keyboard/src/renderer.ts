@@ -1,9 +1,12 @@
 import './index.css';
+import './debug-minigames.css';
+import './animations.css';
 import { BoardPhysics } from './board-physics';
 import { BoardRenderer, LANDING_FLASH_MS } from './board-renderer';
 import { BoardState } from './board-state';
 import { MinigameReel } from './minigame-reel';
-import type { SpecialKey } from './contracts';
+import type { MinigameId, SpecialKey } from './contracts';
+import { MINIGAMES } from './minigame-data';
 import { SkillCheck } from './skill-check';
 
 const required = <T extends Element>(selector: string): T => {
@@ -23,10 +26,12 @@ const skillCheck = new SkillCheck(required<HTMLElement>('#skill-check'));
 const specialKeyButtons = Array.from(
   document.querySelectorAll<HTMLButtonElement>('[data-special-key]'),
 );
+const debugPanel = required<HTMLElement>('#debug-minigames');
+const debugButtons = required<HTMLElement>('#debug-minigame-buttons');
 
 const board = new BoardState();
 const rendererRef: { current?: BoardRenderer } = {};
-let phase: 'ready' | 'highlight' | 'selector' | 'skill-check' = 'ready';
+let phase: 'ready' | 'highlight' | 'selector' | 'skill-check' | 'debug' = 'ready';
 let completionTimer: number | undefined;
 
 const updateControls = (): void => {
@@ -37,6 +42,7 @@ const updateControls = (): void => {
   if (phase === 'highlight') status.textContent = 'REGISTERING HIT...';
   else if (phase === 'selector') status.textContent = 'MYSTERY EVENT ACTIVE';
   else if (phase === 'skill-check') status.textContent = 'SPECIAL KEY CHECK ACTIVE';
+  else if (phase === 'debug') status.textContent = 'DEBUG MINIGAME ACTIVE';
   else if (board.specialPending) {
     status.textContent = `MYSTERY ARMED · ${board.activeBalls} BALLS REMAIN`;
   }
@@ -118,6 +124,40 @@ const runSpecialKey = async (key: SpecialKey): Promise<void> => {
     !result.ok,
   );
 };
+
+const runDebugMinigame = async (id: MinigameId): Promise<void> => {
+  if (phase !== 'ready' || board.activeBalls > 0) {
+    showStatus('DEBUG LAUNCH BLOCKED · WAIT FOR IDLE BOARD', true);
+    return;
+  }
+  phase = 'debug';
+  updateControls();
+  try {
+    const result = await window.sloppyKeyboard.debugRunMinigame(id);
+    phase = 'ready';
+    updateControls();
+    showStatus(
+      result.message ?? 'DEBUG MINIGAME ENDED',
+      result.status === 'failed',
+    );
+  } catch {
+    phase = 'ready';
+    updateControls();
+    showStatus('DEBUG MINIGAME FAILED SAFELY', true);
+  }
+};
+
+void window.sloppyKeyboard.debugMode().then((enabled) => {
+  if (!enabled) return;
+  debugPanel.hidden = false;
+  for (const game of MINIGAMES) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = game.label;
+    button.addEventListener('click', () => void runDebugMinigame(game.id));
+    debugButtons.append(button);
+  }
+});
 
 const physics = new BoardPhysics({
   onLanding: (_ballId, slot) => {

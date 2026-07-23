@@ -6,6 +6,8 @@ import {
 import {
   IPC_CLOSE_WINDOW,
   IPC_DRAW_MINIGAME,
+  IPC_DEBUG_MODE,
+  IPC_DEBUG_RUN_MINIGAME,
   IPC_MINIMIZE_WINDOW,
   IPC_PRESS_SPECIAL_KEY,
   IPC_RUN_MINIGAME,
@@ -32,6 +34,7 @@ declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 let mainWindow: BrowserWindow | null = null;
 let activeMinigame = false;
+const debugMinigames = app.commandLine.hasSwitch('debug-minigames');
 
 if (require('electron-squirrel-startup')) {
   app.quit();
@@ -78,6 +81,23 @@ const createWindow = (): void => {
   mainWindow.once('ready-to-show', () => mainWindow?.showInactive());
 };
 
+const runMinigame = async (id: unknown): Promise<MinigameResult> => {
+  if (!isMinigameId(id)) {
+    return { status: 'failed', message: 'UNKNOWN MINIGAME' };
+  }
+  if (activeMinigame || !mainWindow) {
+    return { status: 'failed', message: 'A MINIGAME IS ALREADY ACTIVE' };
+  }
+  activeMinigame = true;
+  try {
+    return await runRegisteredMinigame(id, { mainWindow });
+  } catch {
+    return { status: 'failed', message: 'MINIGAME FAILED SAFELY' };
+  } finally {
+    activeMinigame = false;
+  }
+};
+
 app.whenReady().then(() => {
   ipcMain.handle(IPC_TYPE_CHARACTER, (_event, character: string) =>
     typeWithHookTemporarilyDisabled(() => typeCharacter(character)),
@@ -94,25 +114,15 @@ app.whenReady().then(() => {
     },
   );
   ipcMain.handle(IPC_DRAW_MINIGAME, () => drawMinigame());
-  ipcMain.handle(
-    IPC_RUN_MINIGAME,
-    async (_event, id: unknown): Promise<MinigameResult> => {
-      if (!isMinigameId(id)) {
-        return { status: 'failed', message: 'UNKNOWN MINIGAME' };
-      }
-      if (activeMinigame || !mainWindow) {
-        return { status: 'failed', message: 'A MINIGAME IS ALREADY ACTIVE' };
-      }
-      activeMinigame = true;
-      try {
-        return await runRegisteredMinigame(id, { mainWindow });
-      } catch {
-        return { status: 'failed', message: 'MINIGAME FAILED SAFELY' };
-      } finally {
-        activeMinigame = false;
-      }
-    },
-  );
+  ipcMain.handle(IPC_RUN_MINIGAME, (_event, id: unknown) => runMinigame(id));
+  ipcMain.handle(IPC_DEBUG_MODE, () => debugMinigames);
+  ipcMain.handle(IPC_DEBUG_RUN_MINIGAME, (_event, id: unknown) =>
+    debugMinigames
+      ? runMinigame(id)
+      : Promise.resolve({
+        status: 'failed' as const,
+        message: 'DEBUG MINIGAMES ARE DISABLED',
+      }));
   ipcMain.on(IPC_CLOSE_WINDOW, (event) =>
     BrowserWindow.fromWebContents(event.sender)?.close(),
   );
