@@ -11,6 +11,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
+    "build:native": "node scripts/build-native.js",
+    "postinstall": "node scripts/build-native.js",
     "lint": "eslint --ext .ts,.tsx .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
