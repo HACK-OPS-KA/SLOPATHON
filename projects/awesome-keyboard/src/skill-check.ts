@@ -4,6 +4,7 @@ const INITIAL_ROTATION_MS = 1450;
 const MIN_ROTATION_MS = 360;
 const MISS_SPEED_MULTIPLIER = 0.62;
 const TARGET_SIZE = 0.13;
+const MAX_MISSES = 3;
 
 export class SkillCheck {
   private readonly dial: HTMLElement;
@@ -66,6 +67,11 @@ export class SkillCheck {
       return;
     }
     this.misses += 1;
+    if (this.misses >= MAX_MISSES) {
+      this.result.textContent = '3 STRIKES · MINIGAME PENALTY';
+      this.retryTimer = window.setTimeout(() => this.finish(false), 720);
+      return;
+    }
     this.rotationMs = Math.max(
       MIN_ROTATION_MS,
       Math.round(this.rotationMs * MISS_SPEED_MULTIPLIER),

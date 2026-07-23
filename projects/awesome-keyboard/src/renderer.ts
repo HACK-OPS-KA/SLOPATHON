@@ -102,6 +102,28 @@ const finishAfterHighlight = (): void => {
   }, LANDING_FLASH_MS);
 };
 
+const launchSkillCheckPenalty = async (): Promise<void> => {
+  phase = 'selector';
+  updateControls();
+  try {
+    const draw = await window.sloppyKeyboard.drawMinigame();
+    const winner = await selector.spin(draw);
+    const result = await window.sloppyKeyboard.runMinigame(winner.id);
+    selector.hide();
+    phase = 'ready';
+    updateControls();
+    showStatus(
+      result.message ?? 'SKILL CHECK PENALTY COMPLETE',
+      result.status === 'failed',
+    );
+  } catch {
+    selector.hide();
+    phase = 'ready';
+    updateControls();
+    showStatus('SKILL CHECK PENALTY FAILED SAFELY', true);
+  }
+};
+
 const runSpecialKey = async (key: SpecialKey): Promise<void> => {
   if (phase !== 'ready' || board.activeBalls > 0) {
     showStatus('WAIT FOR THE CURRENT VOLLEY');
@@ -113,7 +135,8 @@ const runSpecialKey = async (key: SpecialKey): Promise<void> => {
   phase = 'ready';
   updateControls();
   if (!success) {
-    showStatus(`${key.toUpperCase()} BLOCKED · TIMING MISSED`, true);
+    showStatus(`${key.toUpperCase()} BLOCKED · 3 STRIKES`, true);
+    await launchSkillCheckPenalty();
     return;
   }
   const result = await window.sloppyKeyboard.pressSpecialKey(key);

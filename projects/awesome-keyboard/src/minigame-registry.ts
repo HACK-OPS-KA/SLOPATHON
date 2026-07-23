@@ -176,9 +176,14 @@ const runShorts = ({ mainWindow }: MinigameContext): Promise<MinigameResult> =>
     const playerWidth = Math.min(360, Math.floor(mainDisplay.workArea.width / 3));
     const playerHeight = Math.min(640, mainDisplay.workArea.height - 150);
     const downloadedPlayers = videos.map((video, index) => {
+      const onLeft = index % 2 === 0;
+      const edgeInset = 24 + Math.floor(index / 2) * 18;
+      const playerX = onLeft
+        ? mainDisplay.workArea.x + edgeInset
+        : mainDisplay.workArea.x + mainDisplay.workArea.width
+          - playerWidth - edgeInset;
       const player = track(new BrowserWindow({
-        x: mainDisplay.workArea.x + mainDisplay.workArea.width
-          - playerWidth - 24 - index * (playerWidth + 16),
+        x: playerX,
         y: mainDisplay.workArea.y + 112,
         width: playerWidth,
         height: playerHeight,
