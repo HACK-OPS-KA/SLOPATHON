@@ -117,7 +117,8 @@ transition: none;
     for(let state of states) {
         document.getElementById(state).classList.add("hidden")
     }
-    document.getElementById('state-'+newState).classList.remove("hidden")
+    console.log('state-'+newState.trim())
+    document.getElementById('state-'+newState.trim()).classList.remove("hidden")
   }
 
 
