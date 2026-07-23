@@ -1,84 +1,59 @@
-# Project name
+# Sloppy Keyboard
 
-> One sentence explaining the bad idea.
-> Example: “A keyboard that only types when you compliment it.”
-
-## Team
-
-- Name / handle (role if you want)
-- Name / handle
+> A keyboard that makes every letter take the scenic route.
 
 ## What is this?
 
-2–5 sentences. Assume the reader was not standing next to you.
+Sloppy Keyboard is a Windows Electron app disguised as a Galton board. Keep it
+above a browser, click the launch rail, and a ball tumbles through brass pins.
+The lowercase letter in its landing bin is typed into the input that already
+has focus.
 
-- What you built
-- What it connects to / runs on (laptop? microcontroller? browser?)
-- What the demo looks like in one line
+Ten unique letters are available in each volley. Launch as many as 25 balls at
+once; their shared letter bank rerolls after the final ball lands. If none of
+the current letters help, use **Skip letters** while the board is idle.
 
-## Why should this not exist?
-
-What makes this cursed?
-
-Pick 1–3:
-- totally unnecessary
-- wildly over-engineered for the outcome
-- solves a problem nobody has
-- morally questionable UX (but harmless)
-- physically absurd
-- takes the long way on purpose
-
-## What it does
-
-**Actually does:**
-- …
-- …
-
-**Should do (but doesn’t yet):**
-- …
-
-## How it works
 ```text
-input -> unnecessary machinery -> questionable output
+click -> gravity -> statistically questionable spelling -> keyboard input
 ```
 
-## Run it
+## Requirements
 
-### Requirements
+- Windows 10 or newer
+- Node.js and npm for development
+- A normal, non-administrator browser or text editor as the typing target
 
-#### Software
-- OS:
-- Language/runtime:
-- Package manager:
-- Accounts / API keys (if any):
-- Other dependencies:
+Windows prevents a normal application from injecting input into an elevated
+administrator application. Run the browser and Sloppy Keyboard at the same
+permission level.
 
-#### Hardware (if any)
-
-- Board/device:
-- Sensors/actuators:
-- Power:
-
-### Setup
+## Run
 
 ```bash
-# # clone / install
-# e.g.
-# npm install
-# pip install -r requirements.txt
+npm install
+npm start
 ```
 
-### Start
+Focus a text field in another application, then click the dark drop rail at
+the top of Sloppy Keyboard. The board is non-focusable, so the other
+application should retain keyboard focus.
+
+## Verify
 
 ```bash
-# run it
-# e.g.
-# npm run dev
-# python main.py
+npm test
+npm run typecheck
+npm run lint
+npm run package
 ```
 
-## Demo
+## Architecture
 
-- Screenshot(s) in ```assets/```
-- Photo(s) of the build
-- Short clip link
+- `board-state.ts` owns random letters and volley lifecycle.
+- `board-physics.ts` owns Matter.js bodies and landing detection.
+- `board-renderer.ts` draws the machine without controlling its behavior.
+- `renderer.ts` connects UI, physics, and the restricted preload API.
+- `input-service.ts` validates and serializes Windows keyboard output.
+
+Each source file stays below 500 lines so features can be developed in
+parallel with fewer overlapping edits.

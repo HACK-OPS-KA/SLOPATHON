@@ -1,12 +1,55 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
     <title>AWESOME-KEYBOARD!</title>
-
   </head>
   <body>
-    <h1>AWESOME-KEYBOARD!</h1>
-    <p>Welcome to your Electron application.</p>
+    <main class="machine">
+      <header class="titlebar">
+        <div class="brand">
+          <span class="brand__edition">UNRELIABLE INPUT DIVISION</span>
+          <h1>AWESOME<br />KEYBOARD!</h1>
+        </div>
+        <div class="titlebar__right">
+          <div class="batch">
+            <span>LIVE BALLS</span>
+            <strong id="ball-count">00</strong>
+          </div>
+          <button
+            id="close"
+            class="close"
+            type="button"
+            aria-label="Close Sloppy Keyboard"
+          >×</button>
+        </div>
+      </header>
+
+      <section class="instruction">
+        <span class="instruction__arrow">↓</span>
+        <p><strong>CHOOSE YOUR ODDS.</strong> Click the dark rail to drop.</p>
+        <button id="skip" class="skip" type="button">
+          <span>↻</span> SKIP LETTERS
+        </button>
+      </section>
+
+      <section class="board-shell" aria-label="Galton board keyboard">
+        <canvas id="board" width="880" height="560"></canvas>
+        <div class="glass-glare" aria-hidden="true"></div>
+      </section>
+
+      <footer class="readout">
+        <span id="status">READY · CLICK THE DROP RAIL</span>
+        <div class="typed">
+          LAST TRANSMISSION
+          <strong id="typed-value">–</strong>
+        </div>
+      </footer>
+    </main>
+    <script src="./renderer.ts"></script>
   </body>
 </html>

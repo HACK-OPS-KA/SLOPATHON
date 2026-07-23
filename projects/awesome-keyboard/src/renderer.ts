@@ -1,33 +1,100 @@
-/**
- * This file will automatically be loaded by webpack and run in the "renderer" context.
- * To learn more about the differences between the "main" and the "renderer" context in
- * Electron, visit:
- *
- * https://electronjs.org/docs/latest/tutorial/process-model
- *
- * By default, Node.js integration in this file is disabled. When enabling Node.js integration
- * in a renderer process, please be aware of potential security implications. You can read
- * more about security risks here:
- *
- * https://electronjs.org/docs/tutorial/security
- *
- * To enable Node.js integration in this file, open up `main.js` and enable the `nodeIntegration`
- * flag:
- *
- * ```
- *  // Create the browser window.
- *  mainWindow = new BrowserWindow({
- *    width: 800,
- *    height: 600,
- *    webPreferences: {
- *      nodeIntegration: true
- *    }
- *  });
- * ```
- */
-
+import '@fontsource/bebas-neue';
+import '@fontsource/courier-prime/400.css';
+import '@fontsource/courier-prime/700.css';
 import './index.css';
+import { BoardPhysics } from './board-physics';
+import { BoardRenderer } from './board-renderer';
+import { BoardState } from './board-state';
 
-console.log(
-  '👋 This message is being logged by "renderer.js", included via webpack',
-);
+const canvas = document.querySelector<HTMLCanvasElement>('#board');
+const skipButton = document.querySelector<HTMLButtonElement>('#skip');
+const closeButton = document.querySelector<HTMLButtonElement>('#close');
+const ballCount = document.querySelector<HTMLElement>('#ball-count');
+const status = document.querySelector<HTMLElement>('#status');
+const typedValue = document.querySelector<HTMLElement>('#typed-value');
+
+if (
+  !canvas
+  || !skipButton
+  || !closeButton
+  || !ballCount
+  || !status
+  || !typedValue
+) {
+  throw new Error('The keyboard interface is incomplete.');
+}
+
+const board = new BoardState();
+const rendererRef: { current?: BoardRenderer } = {};
+
+const updateControls = (): void => {
+  ballCount.textContent = String(board.activeBalls).padStart(2, '0');
+  skipButton.disabled = board.activeBalls > 0;
+  status.textContent = board.activeBalls > 0
+    ? 'VOLLEY IN PROGRESS'
+    : 'READY · CLICK THE DROP RAIL';
+};
+
+const finishVolleyIfNeeded = (shouldReroll: boolean): void => {
+  if (shouldReroll) board.reroll();
+  updateControls();
+};
+
+const physics = new BoardPhysics({
+  onLanding: (_ballId, slot) => {
+    const landing = board.land(slot);
+    rendererRef.current?.flash(slot, landing.character);
+    typedValue.textContent = landing.character;
+    typedValue.classList.remove('pop');
+    void typedValue.offsetWidth;
+    typedValue.classList.add('pop');
+    status.textContent = `TRANSMITTING “${landing.character}”`;
+
+    void window.sloppyKeyboard
+      .typeCharacter(landing.character)
+      .then((result) => {
+        if (!result.ok) {
+          status.textContent = 'INPUT BLOCKED · FOCUS A NORMAL WINDOW';
+          status.classList.add('error');
+          window.setTimeout(() => status.classList.remove('error'), 1800);
+        }
+      });
+    finishVolleyIfNeeded(landing.shouldReroll);
+  },
+  onAbandon: () => {
+    finishVolleyIfNeeded(board.abandon());
+  },
+});
+
+const renderer = new BoardRenderer(canvas, physics, () => board.letters);
+rendererRef.current = renderer;
+
+canvas.addEventListener('pointerdown', (event) => {
+  if (!renderer.isLaunchRail(event.clientY)) return;
+  const launched = physics.launch(renderer.toBoardX(event.clientX));
+  if (launched) {
+    board.launch();
+    updateControls();
+  } else {
+    status.textContent = 'BALL LIMIT REACHED';
+  }
+});
+
+skipButton.addEventListener('click', () => {
+  if (board.activeBalls > 0) return;
+  board.reroll();
+  status.textContent = 'NEW LETTER BANK LOADED';
+  skipButton.classList.remove('spin');
+  void skipButton.offsetWidth;
+  skipButton.classList.add('spin');
+});
+
+closeButton.addEventListener('click', () => {
+  window.sloppyKeyboard.closeWindow();
+});
+
+window.addEventListener('beforeunload', () => physics.stop());
+
+updateControls();
+physics.start();
+renderer.start();
