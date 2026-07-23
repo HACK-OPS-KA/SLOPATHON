@@ -10,13 +10,13 @@ mod ws {
 use axum::{
     extract::{
         ws::{WebSocket, WebSocketUpgrade},
-        Path, State,
+        Path, Query, State,
     },
     response::IntoResponse,
     routing::get,
     Json, Router,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use tracing_subscriber::EnvFilter;
 
@@ -27,9 +27,17 @@ use crate::ws::display::handle_display;
 
 const PORT: u16 = 6969;
 
+#[derive(Debug, Deserialize)]
+pub struct CreateSessionQuery {
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+}
+
 #[derive(Serialize)]
 struct CreateSessionResponse {
     session_id: String,
+    map_width: u32,
+    map_height: u32,
 }
 
 #[derive(Clone)]
@@ -38,10 +46,17 @@ struct AppState {
 }
 
 /// Erstellt eine neue Session und gibt die ID zurück.
+/// Query-Parameter: ?width=1920&height=1080 (optional, Default: 1000x800)
 /// Der Game-Loop startet noch nicht – erst wenn das erste Display sich verbindet.
-async fn create_session(State(state): State<AppState>) -> Json<CreateSessionResponse> {
+async fn create_session(
+    State(state): State<AppState>,
+    Query(query): Query<CreateSessionQuery>,
+) -> Json<CreateSessionResponse> {
+    let map_width = query.width.unwrap_or(1000);
+    let map_height = query.height.unwrap_or(800);
+
     let session_id = generate_session_id();
-    let session = crate::session::Session::new(session_id.clone());
+    let session = crate::session::Session::new(session_id.clone(), map_width, map_height);
     let session = std::sync::Arc::new(tokio::sync::Mutex::new(session));
 
     // Speichere die Session (ohne Game-Loop)
@@ -50,10 +65,12 @@ async fn create_session(State(state): State<AppState>) -> Json<CreateSessionResp
         sessions.insert(session_id.clone(), session);
     }
 
-    tracing::info!("Created new session: {}", session_id);
+    tracing::info!("Created new session: {} ({}x{})", session_id, map_width, map_height);
 
     Json(CreateSessionResponse {
         session_id: session_id.clone(),
+        map_width,
+        map_height,
     })
 }
 
@@ -105,6 +122,12 @@ async fn handle_display_with_session(
 
     match session {
         Some(session_arc) => {
+            // Map-Größe auslesen (wird beim Session-Erstellen festgelegt)
+            let (map_width, map_height) = {
+                let session = session_arc.lock().await;
+                (session.map_width, session.map_height)
+            };
+
             // Display verbindet sich: Erstelle broadcast-Channel
             let rx: broadcast::Receiver<GameState> = {
                 let mut session = session_arc.lock().await;
@@ -116,14 +139,13 @@ async fn handle_display_with_session(
                 let mut session = session_arc.lock().await;
                 if !session.game_loop_started {
                     session.game_loop_started = true;
-                    // Release lock, dann start_game_loop mit dem Arc
                     drop(session);
                     start_game_loop(session_arc.clone());
                 }
             }
 
-            // Behandle Display-Verbindung mit dem Receiver
-            handle_display(socket, rx).await;
+            // Behandle Display-Verbindung mit dem Receiver + Map-Größe
+            handle_display(socket, map_width, map_height, rx).await;
         }
         None => {
             tracing::warn!("Session not found: {}", session_id);
@@ -158,9 +180,9 @@ async fn main() {
 
     tracing::info!("Server running on http://{}", addr);
     tracing::info!("Endpoints:");
-    tracing::info!("  GET /api/session                         - Create session");
-    tracing::info!("  GET /ws/controller/{{session_id}}        - Controller WebSocket");
-    tracing::info!("  GET /ws/view/{{session_id}}              - Display WebSocket");
+    tracing::info!("  GET /api/session[?width=1920&height=1080] - Create session");
+    tracing::info!("  GET /ws/controller/{{session_id}}          - Controller WebSocket");
+    tracing::info!("  GET /ws/view/{{session_id}}                - Display WebSocket");
 
     axum::serve(listener, app)
         .await

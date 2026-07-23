@@ -13,9 +13,18 @@ struct ControllerInput {
     switch_color: Option<bool>,
 }
 
+/// Sends a text line to the controller with newline delimiter.
+async fn send_line(socket: &mut WebSocket, line: &str) -> Result<(), ()> {
+    let msg = format!("{}\n", line);
+    socket.send(Message::Text(msg)).await.map_err(|_| ())
+}
+
 /// Behandelt eine Controller-WebSocket-Verbindung.
 /// Der Controller sendet nur Richtungsdaten (unidirektional).
-/// Das Backend sendet nur "start" bei Spielbeginn und "rank: X" bei Tod.
+/// Das Backend sendet Text-Lines:
+///   - "lobby"   bei Verbindungsaufbau
+///   - "ingame"  wenn das Spiel beginnt
+///   - "message: [Text]" für Nachrichten (z.B. "message: rank 3")
 pub async fn handle_controller(mut socket: WebSocket, session: Arc<Mutex<Session>>) {
     tracing::info!("Controller connected");
 
@@ -24,10 +33,9 @@ pub async fn handle_controller(mut socket: WebSocket, session: Arc<Mutex<Session
         let mut session = session.lock().await;
         session.player_count += 1;
         let player_id = format!("player_{}", session.player_count);
-        // Füge einen neuen Spieler hinzu
         let color = random_color();
-        let x = rand::random::<f64>() * session.map_width;
-        let y = rand::random::<f64>() * session.map_height;
+        let x = rand::random::<f64>() * session.map_width as f64;
+        let y = rand::random::<f64>() * session.map_height as f64;
         let player = crate::player::Player::new(player_id.clone(), x, y, color);
         session.players.push(Arc::new(Mutex::new(player)));
         player_id
@@ -35,12 +43,13 @@ pub async fn handle_controller(mut socket: WebSocket, session: Arc<Mutex<Session
 
     tracing::info!("Controller assigned player: {}", player_id);
 
-    // Sende "start" an den Controller (Mock: sofort)
-    if socket
-        .send(Message::Text("start".to_string()))
-        .await
-        .is_err()
-    {
+    // Sende "lobby" an den Controller (in der Lobby-Phase)
+    if send_line(&mut socket, "lobby").await.is_err() {
+        return;
+    }
+
+    // Mock: sofort "ingame" senden
+    if send_line(&mut socket, "ingame").await.is_err() {
         return;
     }
 
@@ -78,10 +87,11 @@ pub async fn handle_controller(mut socket: WebSocket, session: Arc<Mutex<Session
     }
 }
 
-fn random_color() -> [u8; 3] {
-    [
+fn random_color() -> String {
+    format!(
+        "#{:02x}{:02x}{:02x}",
         rand::random::<u8>(),
         rand::random::<u8>(),
         rand::random::<u8>(),
-    ]
+    )
 }

@@ -10,18 +10,28 @@ http://localhost:6969
 ## 1. REST-Endpunkt
 
 ### `GET /api/session` — Session erstellen
-Erstellt eine neue Spiel-Session. Der Game-Loop (30fps) startet automatisch.
+
+Erstellt eine neue Spiel-Session mit der angegebenen Bildschirmgröße. Der Game-Loop startet noch nicht – erst wenn das erste Display sich verbindet.
+
+**Query-Parameter (optional):**
+
+| Parameter | Typ | Optional | Default | Beschreibung |
+|-----------|-----|----------|---------|-------------|
+| `width` | `u32` | Ja | `1000` | Breite der Spielwelt |
+| `height` | `u32` | Ja | `800` | Höhe der Spielwelt |
+
+Beispiel: `GET /api/session?width=1920&height=1080`
+
+Die Map-Größe kann nach dem Erstellen nicht mehr geändert werden.
 
 **Response (JSON):**
 ```json
 {
-  "session_id": "ea66b2b5-6215-4ec7-8edb-523bcbd2e96b"
+  "session_id": "ea66b2b5-6215-4ec7-8edb-523bcbd2e96b",
+  "map_width": 1920,
+  "map_height": 1080
 }
 ```
-
-**Verwendung:**
-- **Display-Frontend**: Ruft diesen Endpunkt (z.B. nach dem Laden von `/`) auf und leitet den Benutzer auf eine Session-Seite weiter
-- **Controller-Frontend**: Erhält die Session-ID über den Display-Session-Link (URL-Pfad)
 
 ---
 
@@ -32,7 +42,7 @@ Erstellt eine neue Spiel-Session. Der Game-Loop (30fps) startet automatisch.
 GET /ws/controller/{session_id}
 ```
 
-**Richtung:** Client → Server (unidirektional Input)
+**Richtung:** Bidirektional (aber hauptsächlich Controller → Backend)
 
 #### Nachricht vom Controller an Backend (JSON):
 ```json
@@ -55,20 +65,38 @@ Beide Felder sind optional. Es kann auch nur ein Feld gesendet werden:
 { "switch_color": true }
 ```
 
-#### Nachricht vom Backend an Controller (Plain Text):
-| Text | Zeitpunkt |
-|------|-----------|
-| `"start"` | Direkt nach Verbindungsaufbau (Mock: sofort) |
-| `"rank: {position}"` | Bei Tod des Spielers, z.B. `"rank: 3"` (dritter Platz) |
+#### Nachricht vom Backend an Controller (Plain Text, newline-delimited):
 
-Es gibt keine weiteren Nachrichten vom Backend an den Controller.
+Jede Nachricht ist eine einzelne Textzeile, terminiert mit `\n`.
+
+| Nachricht | Bedeutung |
+|-----------|-----------|
+| `lobby` | Wird direkt nach Verbindungsaufbau gesendet. Controller ist in der Lobby |
+| `ingame` | Das Spiel beginnt. Controller kann jetzt Richtungen senden |
+| `message: {text}` | Allgemeine Nachricht, z.B. `message: rank 3` oder `message: game over` |
+
+**Empfang auf dem Controller (JavaScript Beispiel):**
+```javascript
+ws.onmessage = (event) => {
+  const lines = event.data.split('\n').filter(l => l);
+  for (const line of lines) {
+    if (line === 'lobby') { /* in lobby */ }
+    else if (line === 'ingame') { /* game started */ }
+    else if (line.startsWith('message: ')) {
+      const msg = line.slice(9);
+      // z.B. "rank 3" oder "game over"
+    }
+  }
+};
+```
 
 #### Ablauf:
-1. Controller verbindet sich mit `ws://host:3000/ws/controller/{session_id}`
-2. Backend sendet `"start"` (bei echter Logik: erst wenn Display "Spiel starten" klickt)
-3. Controller sendet regelmäßig `{"direction": {"x": 0.5, "y": -0.3}}`
-4. Optional: `{"switch_color": true}` für zufälligen Farbwechsel
-5. Bei Tod: Backend sendet `"rank: 2"`, Verbindung wird geschlossen
+1. Controller verbindet sich mit `ws://localhost:6969/ws/controller/{session_id}`
+2. Backend sendet `lobby\n`
+3. Sobald Display "Spiel starten" klickt: Backend sendet `ingame\n`
+4. Controller sendet regelmäßig `{"direction": {"x": 0.5, "y": -0.3}}`
+5. Optional: `{"switch_color": true}` für zufälligen Farbwechsel
+6. Bei Tod: Backend sendet `message: rank 3\n`, Verbindung wird geschlossen
 
 ---
 
@@ -79,25 +107,28 @@ GET /ws/view/{session_id}
 
 **Richtung:** Server → Client (30fps Broadcast)
 
-#### Nachricht vom Backend an Display (JSON, ~30x pro Sekunde):
+#### Nachricht 1 — Init (einmalig bei Verbindungsaufbau):
+```json
+{ "type": "init", "map_width": 1920, "map_height": 1080 }
+```
+
+#### Nachricht 2+ — GameState (JSON, ~30x pro Sekunde):
 ```json
 {
-  "map_width": 1000.0,
-  "map_height": 800.0,
   "players": [
     {
       "id": "player_1",
       "x": 215.3,
       "y": 341.7,
       "size": 20.0,
-      "color": [255, 0, 0]
+      "color": "#ff0000"
     },
     {
       "id": "player_4",
       "x": 502.1,
       "y": 612.9,
       "size": 20.0,
-      "color": [255, 255, 0]
+      "color": "#ffff00"
     }
   ],
   "food": [
@@ -108,15 +139,6 @@ GET /ws/view/{session_id}
 }
 ```
 
-#### Felder:
-
-| Feld | Typ | Beschreibung |
-|------|-----|-------------|
-| `map_width` | `number` | Weltbreite in Spiel-Einheiten |
-| `map_height` | `number` | Welthöhe in Spiel-Einheiten |
-| `players` | `PlayerInfo[]` | Alle lebenden Spieler (gestorbene werden entfernt) |
-| `food` | `FoodInfo[]` | Alle aktuellen Nahrungsobjekte |
-
 #### PlayerInfo:
 | Feld | Typ | Beschreibung |
 |------|-----|-------------|
@@ -124,7 +146,7 @@ GET /ws/view/{session_id}
 | `x` | `number` | X-Position in der Spielwelt |
 | `y` | `number` | Y-Position in der Spielwelt |
 | `size` | `number` | Durchmesser des Spielers |
-| `color` | `[number, number, number]` | RGB-Farbe `[r, g, b]` jeweils 0-255 |
+| `color` | `string` | HTML RGB Hex, z.B. `"#ff0000"` |
 
 #### FoodInfo:
 | Feld | Typ | Beschreibung |
@@ -134,9 +156,9 @@ GET /ws/view/{session_id}
 | `size` | `number` | Größe/Durchmesser |
 
 #### Ablauf:
-1. Display verbindet sich mit `ws://host:3000/ws/view/{session_id}`
-2. Backend sendet sofort den initialen Game-State
-3. Backend sendet anschließend ~30 Updates pro Sekunde
+1. Display verbindet sich mit `ws://localhost:6969/ws/view/{session_id}`
+2. Backend sendet sofort die Init-Nachricht: `{"type":"init","map_width":1920,"map_height":1080}`
+3. Backend sendet anschließend ~30 GameState-Updates pro Sekunde
 4. Display rendert die aktuelle Spielwelt basierend auf den Daten
 
 ---
@@ -145,8 +167,8 @@ GET /ws/view/{session_id}
 
 | Von → An | Medium | Format | Richtung | Frequenz |
 |----------|--------|--------|----------|----------|
-| Controller → Backend | WebSocket Text | JSON `{direction?, switch_color?}` | Unidirektional Input | Bei Eingabe |
-| Backend → Controller | WebSocket Text | Plain `"start"` oder `"rank: N"` | Seltene Events | 2x pro Session max. |
+| Controller → Backend | WebSocket Text | JSON `{direction?, switch_color?}` | Hauptsächlich Input | Bei Eingabe |
+| Backend → Controller | WebSocket Text | Plain `"lobby"`/`"ingame"`/`"message: ..."` + `\n` | Events | 2-3x pro Session |
 | Backend → Display | WebSocket Text | JSON `GameState` | Unidirektional Output | ~30 Hz |
 | Display → Backend | — | — | Keine Kommunikation | — |
 
@@ -161,7 +183,7 @@ GET /ws/view/{session_id}
   x: number,               // Position X
   y: number,               // Position Y
   size: number,            // Start: 20.0
-  color: [number, number, number],  // RGB [r, g, b]
+  color: string,           // HTML RGB Hex, z.B. "#ff0000"
   direction?: {            // Aktuelle Richtung vom Controller
     x: number,             // -1.0 bis 1.0
     y: number              // -1.0 bis 1.0
@@ -186,8 +208,8 @@ GET /ws/view/{session_id}
 {
   id: string,              // UUID v4
   state: "Waiting" | "Running",
-  map_width: number,       // Z.B. 1000.0
-  map_height: number,      // Z.B. 800.0
+  map_width: number,       // Z.B. 1920
+  map_height: number,      // Z.B. 1080
   player_count: number     // Anzahl verbundener Controller
 }
 ```
@@ -197,14 +219,28 @@ GET /ws/view/{session_id}
 ## 5. Beispiel-Ablauf (komplett)
 
 ```
-1. Display:         GET  /api/session               → { session_id: "abc-123" }
-2. Display:         WS   /ws/view/abc-123          → GameState (30fps)
-3. Controller (5x): WS   /ws/controller/abc-123    → "start"
-4. Controller:      WS   → {"direction":{"x":0.5,"y":-0.3}}
-5. Controller:      WS   → {"switch_color":true}
-6. Backend → Display:     GameState (aktualisiert alle 33ms)
-   ...
-7. Backend → Controller:  "rank: 5" (wenn Spieler stirbt)
+1. Display:         GET  /api/session?width=1920&height=1080
+                    → { session_id: "abc-123", map_width: 1920, map_height: 1080 }
+
+2. Display:         WS   /ws/view/abc-123
+                    ← { "type": "init", "map_width": 1920, "map_height": 1080 }
+                    ← { "players": [...], "food": [...] }  (30fps)
+
+3. Controller (5x): WS   /ws/controller/abc-123
+                    ← "lobby\n"
+
+4. Display klickt "Spiel starten":
+                    → (Lobby-Phase endet)
+                    → Controller ← "ingame\n"
+                    → Game-Loop startet
+
+5. Controller:      WS   → {"direction":{"x":0.5,"y":-0.3}}
+
+6. Controller:      WS   → {"switch_color":true}
+
+7. Backend → Display:     GameState (aktualisiert alle 33ms)
+
+8. Backend → Controller:  "message: rank 5\n" (wenn Spieler stirbt)
 ```
 
 ---

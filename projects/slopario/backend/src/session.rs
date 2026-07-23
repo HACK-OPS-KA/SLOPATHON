@@ -18,15 +18,15 @@ pub struct Session {
     pub state: SessionState,
     pub players: Vec<Arc<Mutex<Player>>>,
     pub food: Vec<Food>,
-    pub map_width: f64,
-    pub map_height: f64,
+    pub map_width: u32,
+    pub map_height: u32,
     pub display_tx: Option<broadcast::Sender<GameState>>,
     pub player_count: u32,
     pub game_loop_started: bool,
 }
 
 impl Session {
-    pub fn new(id: String) -> Self {
+    pub fn new(id: String, map_width: u32, map_height: u32) -> Self {
         let mock_players = create_mock_players();
         let players = mock_players
             .into_iter()
@@ -38,8 +38,8 @@ impl Session {
             state: SessionState::Waiting,
             players,
             food: create_mock_food(),
-            map_width: 1000.0,
-            map_height: 800.0,
+            map_width,
+            map_height,
             display_tx: None,
             player_count: 0,
             game_loop_started: false,
@@ -69,7 +69,7 @@ impl Session {
                         x: p.x,
                         y: p.y,
                         size: p.size,
-                        color: p.color,
+                        color: p.color.clone(),
                     })
                 } else {
                     None
@@ -87,12 +87,7 @@ impl Session {
             })
             .collect();
 
-        GameState {
-            map_width: self.map_width,
-            map_height: self.map_height,
-            players,
-            food,
-        }
+        GameState { players, food }
     }
 }
 

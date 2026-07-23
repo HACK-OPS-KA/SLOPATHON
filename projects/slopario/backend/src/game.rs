@@ -11,7 +11,7 @@ pub struct PlayerInfo {
     pub x: f64,
     pub y: f64,
     pub size: f64,
-    pub color: [u8; 3],
+    pub color: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,10 +23,27 @@ pub struct FoodInfo {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameState {
-    pub map_width: f64,
-    pub map_height: f64,
     pub players: Vec<PlayerInfo>,
     pub food: Vec<FoodInfo>,
+}
+
+/// Wird beim Display-Connect als erste Nachricht gesendet.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InitState {
+    #[serde(rename = "type")]
+    pub msg_type: String,
+    pub map_width: u32,
+    pub map_height: u32,
+}
+
+impl InitState {
+    pub fn new(map_width: u32, map_height: u32) -> Self {
+        Self {
+            msg_type: "init".to_string(),
+            map_width,
+            map_height,
+        }
+    }
 }
 
 /// Startet den Game-Loop für eine Session.

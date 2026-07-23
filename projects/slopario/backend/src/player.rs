@@ -6,7 +6,7 @@ pub struct Player {
     pub x: f64,
     pub y: f64,
     pub size: f64,
-    pub color: [u8; 3],
+    pub color: String,
     pub direction: Option<Direction>,
     pub alive: bool,
     pub score: u32,
@@ -19,7 +19,7 @@ pub struct Direction {
 }
 
 impl Player {
-    pub fn new(id: String, x: f64, y: f64, color: [u8; 3]) -> Self {
+    pub fn new(id: String, x: f64, y: f64, color: String) -> Self {
         Self {
             id,
             x,
@@ -36,11 +36,11 @@ impl Player {
 /// Erzeugt Mock-Spieler für Demo-Zwecke
 pub fn create_mock_players() -> Vec<Player> {
     let colors = [
-        [255, 0, 0],
-        [0, 255, 0],
-        [0, 0, 255],
-        [255, 255, 0],
-        [255, 0, 255],
+        "#ff0000",
+        "#00ff00",
+        "#0000ff",
+        "#ffff00",
+        "#ff00ff",
     ];
 
     let positions = [
@@ -56,7 +56,7 @@ pub fn create_mock_players() -> Vec<Player> {
         .enumerate()
         .map(|(i, &color)| {
             let (x, y) = positions[i];
-            Player::new(format!("player_{}", i + 1), x, y, color)
+            Player::new(format!("player_{}", i + 1), x, y, color.to_string())
         })
         .collect()
 }
