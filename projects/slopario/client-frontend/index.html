@@ -92,7 +92,7 @@ transition: none;
   const zone = document.getElementById('joystickZone');
   const stick = document.getElementById('joystickStick');
 
-  const websocket = new WebSocket("wss://slopario.ehrnsperger.eu");
+  const websocket = new WebSocket(window.location.href.replace("http","ws"));
   websocket.addEventListener("open", () => {
     console.log("CONNECTED");
   });
