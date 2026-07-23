@@ -78,7 +78,7 @@ transition: none;
 </div>
 <div id="state-ingame">
     <div>
-        <button onclick="randomizeColor()">Randomize Color</button>
+        <button id="randomize-color-button">Randomize Color</button>
     </div>
     <div>
         <div class="joystick-zone" id="joystickZone">
@@ -139,11 +139,11 @@ transition: none;
     }))
   }
 
-  function randomizeColor() {
+  document.getElementById("randomize-color-button").addEventListener("click", () => {
     websocket.send(JSON.stringify({
         "switch_color": true,
     }))
-  }
+  })
 
   function updateGeometry() {
     const rect = zone.getBoundingClientRect();
