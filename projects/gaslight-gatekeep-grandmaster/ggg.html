@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GASLIGHT · GATEKEEP · GRANDMASTER</title>
+<style>
+  :root{
+    --bg:#0a0a0f; --panel:#14141c; --ink:#f5f5f7; --dim:#8a8a99;
+    --acc:#ff2e6a; --acc2:#7c3aed; --good:#22d3a7; --bad:#ff445a;
+    --light:#e9d7bd; --dark:#7a5a3a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",system-ui,sans-serif;overflow:hidden;user-select:none}
+  #app{display:grid;grid-template-columns:1fr 380px;height:100vh;gap:18px;padding:18px}
+  @media (max-width:1000px){#app{grid-template-columns:1fr}}
+
+  /* ---- left : stage ---- */
+  #stage{display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+  #brand{font-weight:900;letter-spacing:2px;font-size:clamp(18px,2.4vw,30px);
+    background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;
+    margin-bottom:6px;text-align:center}
+  #sub{color:var(--dim);font-size:13px;margin-bottom:14px;letter-spacing:1px}
+
+  #boardWrap{position:relative;transition:transform .6s cubic-bezier(.2,1.3,.4,1)}
+  #board{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+    width:min(64vh,560px);height:min(64vh,560px);border:6px solid #000;border-radius:8px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .sq{display:flex;align-items:center;justify-content:center;font-size:min(6.6vh,52px);
+    position:relative;cursor:pointer;line-height:1}
+  .sq.l{background:var(--light)} .sq.d{background:var(--dark)}
+  .sq.sel{outline:4px solid var(--acc);outline-offset:-4px}
+  .sq.move::after{content:"";position:absolute;width:26%;height:26%;border-radius:50%;
+    background:rgba(255,46,106,.55)}
+  .sq.cap::after{content:"";position:absolute;inset:6%;border:5px solid rgba(255,46,106,.7);border-radius:50%}
+  .sq.burn{background:radial-gradient(circle,#ff7b00,#7a1500)!important;animation:burnpulse .5s infinite alternate}
+  @keyframes burnpulse{to{filter:brightness(1.4)}}
+  .pc{filter:drop-shadow(0 2px 2px rgba(0,0,0,.5));transition:transform .15s}
+  .pc.w{color:#fff;text-shadow:0 0 2px #000,0 0 6px rgba(0,0,0,.7)}
+  .pc.b{color:#111}
+  .strike{animation:wobble .4s infinite}
+  @keyframes wobble{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+
+  #aurabar{display:flex;align-items:baseline;gap:12px;margin-top:16px}
+  #auraLabel{color:var(--dim);font-size:13px;letter-spacing:3px}
+  #aura{font-weight:900;font-size:clamp(28px,5vw,54px);font-variant-numeric:tabular-nums}
+  #turn{margin-top:4px;color:var(--dim);font-size:13px;height:16px}
+
+  /* ---- right : control deck ---- */
+  #deck{background:var(--panel);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+  h3{margin:0 0 6px;font-size:12px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
+  .rl{display:flex;flex-direction:column;gap:6px}
+  #rlLabel{font-weight:800;font-size:15px}
+  input[type=range]{width:100%;accent-color:var(--acc)}
+  select{width:100%;background:#0d0d14;color:var(--ink);border:1px solid #333;border-radius:8px;padding:8px;font-size:13px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  button.cheat{border:0;border-radius:12px;padding:12px 10px;font-weight:800;font-size:13px;
+    cursor:pointer;color:#fff;transition:transform .08s,filter .15s;text-align:left;line-height:1.25}
+  button.cheat:hover{filter:brightness(1.15)} button.cheat:active{transform:scale(.95)}
+  .b-magnus{background:linear-gradient(135deg,#f7b733,#fc4a1a)}
+  .b-kevin{background:linear-gradient(135deg,#0cebeb,#20e3b2,#29ffc6);color:#053}
+  .b-beer{background:linear-gradient(135deg,#c79081,#dfa579);color:#3a1f00}
+  .b-double{background:linear-gradient(135deg,#7c3aed,#db2777)}
+  .b-mic{background:linear-gradient(135deg,#ff2e6a,#ff6a00);grid-column:span 2;text-align:center;font-size:15px;padding:14px}
+  .b-mic.rec{animation:recpulse .7s infinite}
+  @keyframes recpulse{50%{filter:brightness(1.6)}}
+  small.cost{display:block;font-weight:500;opacity:.85;font-size:10.5px;margin-top:3px}
+  #log{background:#0d0d14;border-radius:12px;padding:12px;height:180px;overflow-y:auto;
+    font-size:13px;display:flex;flex-direction:column;gap:8px}
+  .rmsg{padding:8px 10px;border-radius:8px;background:#1c1c28;border-left:3px solid var(--acc);line-height:1.35}
+  .rmsg.me{border-left-color:var(--good)}
+  #newgame{background:#22222e;color:var(--ink);border:1px solid #333;border-radius:12px;padding:10px;cursor:pointer;font-weight:700}
+  #hint{font-size:11px;color:var(--dim);line-height:1.5}
+
+  /* ---- toast ---- */
+  #toast{position:fixed;left:50%;top:12%;transform:translateX(-50%);z-index:40;
+    display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:min(90vw,700px)}
+  .toast{background:rgba(10,10,15,.92);border:2px solid var(--acc);border-radius:14px;
+    padding:16px 26px;font-weight:900;font-size:clamp(18px,2.6vw,30px);text-align:center;
+    box-shadow:0 10px 40px rgba(255,46,106,.4);animation:pop .3s cubic-bezier(.2,1.6,.4,1)}
+  .toast.good{border-color:var(--good);box-shadow:0 10px 40px rgba(34,211,167,.4)}
+  @keyframes pop{from{transform:scale(.6);opacity:0}}
+  .auraPop{position:fixed;font-weight:900;font-size:60px;z-index:41;pointer-events:none;
+    animation:floatUp 1.4s forwards}
+  @keyframes floatUp{to{transform:translateY(-120px);opacity:0}}
+
+  /* ---- meme stamp ---- */
+  #stamp{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;pointer-events:none}
+  #stamp.on{display:flex}
+  #stamp span{font-weight:900;font-size:clamp(40px,12vw,160px);color:#ff2e6a;
+    border:8px solid #ff2e6a;padding:10px 30px;border-radius:14px;transform:rotate(-12deg);
+    text-shadow:0 4px 0 #000;box-shadow:0 0 60px rgba(255,46,106,.6);letter-spacing:4px;
+    animation:stampin .5s cubic-bezier(.2,1.8,.4,1)}
+  @keyframes stampin{0%{transform:rotate(-12deg) scale(3);opacity:0}60%{transform:rotate(-12deg) scale(.9)}}
+  #vignette{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;
+    box-shadow:inset 0 0 200px 60px rgba(255,0,60,.9);transition:opacity .1s}
+  #vignette.flash{opacity:1;transition:opacity .5s}
+
+  /* ---- leaderboard / beamer ---- */
+  #lb{background:var(--panel);border-radius:12px;padding:12px}
+  #lb ol{margin:6px 0 0;padding-left:22px;font-size:13px;line-height:1.7}
+  #lb .nm{color:var(--ink)} #lb .sc{float:right;font-weight:800;font-variant-numeric:tabular-nums}
+  body.beamer #aura{font-size:clamp(50px,10vw,140px)}
+  body.beamer #brand{font-size:clamp(24px,3.5vw,44px)}
+  #beamerBtn{background:#22222e;color:var(--ink);border:1px solid #333;border-radius:12px;padding:8px;cursor:pointer;font-weight:700;font-size:12px}
+
+  /* ---- FX layer: schnelle Effekte passend zum Roast ---- */
+  #fx{position:fixed;inset:0;z-index:36;pointer-events:none;overflow:hidden}
+  .halo{position:fixed;border-radius:50%;box-shadow:0 0 0 4px rgba(255,60,90,.95),0 0 40px 12px rgba(255,60,90,.55);
+    animation:haloPulse .42s ease-out 5}
+  @keyframes haloPulse{0%{transform:scale(.75);opacity:1}100%{transform:scale(1.6);opacity:0}}
+  .spot{position:fixed;border-radius:50%;box-shadow:0 0 0 4px rgba(255,215,0,.95),0 0 50px 16px rgba(255,215,0,.5);
+    animation:spotPulse .45s ease-in-out 7 alternate}
+  @keyframes spotPulse{to{transform:scale(1.28)}}
+  .halo.green{box-shadow:0 0 0 4px rgba(34,211,167,.95),0 0 40px 12px rgba(34,211,167,.55)}
+  .arrowDown{position:fixed;font-size:38px;animation:bobDown .45s infinite alternate;filter:drop-shadow(0 2px 4px #000)}
+  @keyframes bobDown{to{transform:translateY(-16px)}}
+  .part{position:fixed;font-size:26px;animation:partFly .95s ease-out forwards}
+  @keyframes partFly{to{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0}}
+  .shakeit{animation:bshake .06s 9}
+  @keyframes bshake{0%{transform:translate(7px,-6px)}50%{transform:translate(-8px,5px)}100%{transform:translate(5px,7px)}}
+  .punch{animation:punchy .3s cubic-bezier(.2,1.9,.4,1)}
+  @keyframes punchy{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
+  .tilt{animation:tilty .55s}
+  @keyframes tilty{0%,100%{transform:rotate(0)}30%{transform:rotate(-5deg)}70%{transform:rotate(5deg)}}
+  #glitch{position:fixed;inset:0;z-index:44;pointer-events:none;opacity:0;mix-blend-mode:screen}
+  #glitch.on{opacity:1;animation:glitchbg .06s 7}
+  @keyframes glitchbg{
+    0%{background:linear-gradient(90deg,rgba(255,0,80,.4),transparent 45%);transform:translateX(-8px) skewX(1deg)}
+    50%{background:linear-gradient(90deg,transparent 55%,rgba(0,255,255,.4));transform:translateX(9px) skewX(-1deg)}
+    100%{background:none;transform:none}}
+  #vapor{position:fixed;inset:0;z-index:33;pointer-events:none;opacity:0;transition:opacity .45s;
+    background:linear-gradient(135deg,rgba(255,46,160,.22),rgba(124,58,237,.20),rgba(0,255,255,.16))}
+  #vapor.on{opacity:1}
+  .speed{position:fixed;top:0;height:100vh;width:3px;background:linear-gradient(transparent,#fff,transparent);
+    opacity:.6;animation:speedy .4s linear forwards}
+  @keyframes speedy{to{transform:translateY(-45vh);opacity:0}}
+
+  /* ---- slopathon stalker easter egg ---- */
+  #promo{position:fixed;left:12px;bottom:12px;z-index:38;font-family:"Courier New",monospace;
+    font-size:12px;color:#ff2e6a;background:rgba(0,0,0,.55);padding:5px 10px;border:1px solid #ff2e6a;
+    border-radius:6px;letter-spacing:1px;pointer-events:none;opacity:.85}
+  #promo.glitch{animation:glitch .18s infinite;text-shadow:2px 0 #0ff,-2px 0 #ff2e6a}
+  @keyframes glitch{25%{transform:translate(2px,-1px)}50%{transform:translate(-2px,1px)}75%{transform:translate(1px,1px)}}
+  #slopscare{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:#000}
+  #slopscare.on{display:flex;animation:shake .05s infinite}
+  #slopscare img{width:100%;height:100%;object-fit:contain;animation:zoomin .12s;filter:saturate(1.3) contrast(1.1)}
+  #slopThreat{position:absolute;bottom:6%;width:100%;text-align:center;font-weight:900;
+    font-family:"Courier New",monospace;font-size:clamp(22px,5vw,62px);color:#fff;letter-spacing:2px;
+    text-shadow:0 0 8px #ff2e6a,0 0 26px #ff2e6a,3px 3px 0 #000}
+
+  /* ---- jumpscare ---- */
+  #scare{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
+    background:#000}
+  #scare.on{display:flex;animation:shake .06s infinite}
+  #scare .face{font-size:min(70vh,60vw);animation:zoomin .15s}
+  @keyframes zoomin{from{transform:scale(.2)}}
+  @keyframes shake{0%{transform:translate(3px,-4px)}50%{transform:translate(-4px,3px)}100%{transform:translate(2px,4px)}}
+
+  /* emoji rain (crying babies etc) */
+  #rain{position:fixed;inset:0;z-index:35;pointer-events:none;overflow:hidden}
+  .drop{position:absolute;top:-60px;font-size:44px;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+
+  #startScreen{position:fixed;inset:0;z-index:200;background:radial-gradient(circle at 50% 30%,#1a0b1f,#05050a);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:24px}
+  #startScreen h1{font-size:clamp(30px,7vw,80px);font-weight:900;letter-spacing:3px;margin:0;
+    background:linear-gradient(90deg,var(--acc),var(--acc2),var(--good));-webkit-background-clip:text;background-clip:text;color:transparent}
+  #startScreen p{color:var(--dim);max-width:560px;line-height:1.6;font-size:15px}
+  #startBtn{background:linear-gradient(135deg,var(--acc),var(--acc2));border:0;color:#fff;font-weight:900;
+    font-size:22px;padding:18px 44px;border-radius:16px;cursor:pointer;letter-spacing:1px;
+    box-shadow:0 0 60px rgba(124,58,237,.6);animation:breath 2s infinite}
+  @keyframes breath{50%{transform:scale(1.05)}}
+  .blur{filter:blur(4px) hue-rotate(30deg);transition:filter 1s}
+</style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h1>GASLIGHT<br>GATEKEEP<br>GRANDMASTER</h1>
+  <p>Schach, aber die Engine hasst dich. Sie roastet dich, klaut dir Aura, tauscht heimlich deine Figuren und macht dir manchmal ein Jumpscare. Stell nicht die ELO ein — stell das <b>Roast-Level</b> ein. Viel Spaß, kleiner Bauer.</p>
+  <button id="startBtn">▶ SPIELEN (Ton an!)</button>
+  <p style="font-size:12px">Chrome empfohlen · Ton wird laut · Mikro für Roast-Back optional</p>
+</div>
+
+<div id="app">
+  <div id="stage">
+    <div id="brand">♛ GASLIGHT · GATEKEEP · GRANDMASTER ♛</div>
+    <div id="sub" id="subline">stell nicht die ELO ein. stell dein Trauma ein.</div>
+    <div id="boardWrap"><div id="board"></div></div>
+    <div id="aurabar">
+      <span id="auraLabel">AURA</span>
+      <span id="aura">0</span>
+    </div>
+    <div id="turn">dein Zug, Champ.</div>
+  </div>
+
+  <div id="deck">
+    <div class="rl">
+      <h3>Roast-Level</h3>
+      <div id="rlLabel">3 · gnadenlos</div>
+      <input id="rl" type="range" min="1" max="5" value="3">
+    </div>
+
+    <div class="rl">
+      <h3>🎙️ Stimme</h3>
+      <select id="voiceSel"></select>
+      <div class="grid2" style="margin-top:6px">
+        <button id="voiceTest" class="cheat" style="background:#22222e;text-align:center">🔊 Test</button>
+        <button id="voiceOff" class="cheat" style="background:#22222e;text-align:center">🔇 Ton an/aus</button>
+        <button id="spicyBtn" class="cheat" style="background:linear-gradient(135deg,#ff2e6a,#ff6a00);grid-column:span 2;text-align:center">🌶️ SPICY: AN</button>
+      </div>
+    </div>
+
+    <div>
+      <h3>Cheats (kosten Aura & Würde)</h3>
+      <div class="grid2">
+        <button class="cheat b-magnus" data-c="magnus">🐐 Magnus-Zug<small class="cost">perfekt · aber peinlich danach</small></button>
+        <button class="cheat b-kevin" data-c="kevin">🧒 Kevin, 6J.<small class="cost">Bot crasht · du ziehst nochmal</small></button>
+        <button class="cheat b-beer" data-c="beer">🍺 Bot Bier geben<small class="cost">Bot wird 2 Züge betrunken</small></button>
+        <button class="cheat b-double" data-c="double">⏩ Doppelzug<small class="cost">zieh 2x · -500 Aura</small></button>
+        <button class="cheat b-mic" data-c="mic">🎤 ROAST-BACK (halten & brüllen)</button>
+      </div>
+    </div>
+
+    <div>
+      <h3>Roast-Feed</h3>
+      <div id="log"></div>
+    </div>
+
+    <div id="lb">
+      <h3>🏆 Aura-Leaderboard (Stand)</h3>
+      <ol id="lbList"><li style="color:var(--dim)">noch keine Opfer</li></ol>
+    </div>
+
+    <div class="grid2">
+      <button id="newgame">↺ Neues Spiel</button>
+      <button id="beamerBtn">📽️ Beamer-Modus</button>
+    </div>
+    <div id="hint"><b>Publikum:</b> Tasten <b>1</b>=Brett drehen · <b>2</b>=Feuer legen · <b>3</b>=Figuren tauschen · <b>4</b>=Jumpscare · <b>5</b>=SLOPATHON-Stalker 👁️. Für den Marktplatz per Zuruf abstimmen lassen.</div>
+  </div>
+</div>
+
+<div id="vignette"></div>
+<div id="fx"></div>
+<div id="glitch"></div>
+<div id="vapor"></div>
+<div id="stamp"><span>SKILL ISSUE</span></div>
+<div id="promo">▶ SLOPATHON · OP001 · MARKTPLATZ · 23.07.2026 · HACK//OPS</div>
+<div id="slopscare"><img src="image.png" alt="SLOPATHON"><div id="slopThreat"></div></div>
+
+<div id="toast"></div>
+<div id="rain"></div>
+<div id="scare"><div class="face">👹</div></div>
+
+<script>
+/* ============================================================
+   GASLIGHT · GATEKEEP · GRANDMASTER  — Slopathon prototype
+   Single file. No dependencies. Chrome empfohlen.
+============================================================ */
+
+// ---------- audio (WebAudio synth, no files) ----------
+let AC;
+function ac(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); return AC; }
+function tone(f,dur,type='sine',vol=.3,slideTo){
+  const c=ac(),o=c.createOscillator(),g=c.createGain();
+  o.type=type;o.frequency.value=f;
+  if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,c.currentTime+dur);
+  g.gain.value=vol;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+dur);
+  o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+dur);
+}
+const SFX={
+  auraDown(){ tone(300,.5,'sawtooth',.35,60); },
+  auraUp(){ tone(500,.15,'triangle',.3);setTimeout(()=>tone(800,.2,'triangle',.3),120); },
+  move(){ tone(180,.06,'square',.15); },
+  cap(){ tone(120,.12,'square',.25,60); },
+  angel(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.4,'sine',.25),i*120)); },
+  crash(){ for(let i=0;i<12;i++)setTimeout(()=>tone(80+Math.random()*400,.05,'sawtooth',.3),i*40); },
+  buzzer(){ tone(90,1.2,'sawtooth',.5,70); tone(140,1.2,'square',.4); },
+  sad(){ tone(400,.9,'sine',.25,180); },
+  drunk(){ tone(200,.6,'sine',.2,320); }
+};
+
+// ---------- text-to-speech (robust + Personas) ----------
+let VOICES=[], dePool=[], chosenVoice=null, voiceMode='auto';
+function loadVoices(){
+  VOICES=speechSynthesis.getVoices()||[];
+  dePool=VOICES.filter(v=>/de([-_]|$)/i.test(v.lang));
+  const sel=document.getElementById('voiceSel'); if(!sel)return;
+  const ordered=[...dePool, ...VOICES.filter(v=>!dePool.includes(v))];
+  sel.innerHTML='<option value="__auto__">🎲 Auto — Stimme wechselt ständig</option>'+
+    ordered.map(v=>`<option value="${v.name}">🔒 ${/de([-_]|$)/i.test(v.lang)?'🇩🇪 ':''}${v.name} (${v.lang})</option>`).join('');
+  sel.value = voiceMode==='auto' ? '__auto__' : (chosenVoice?chosenVoice.name:'__auto__');
+}
+speechSynthesis.onvoiceschanged=loadVoices;
+loadVoices(); [150,500,1200,2500].forEach(t=>setTimeout(loadVoices,t)); // Chrome lädt Stimmen verzögert
+document.getElementById('voiceSel').onchange=e=>{
+  if(e.target.value==='__auto__'){ voiceMode='auto'; say('Auto Modus. Ich wechsel jetzt ständig die Stimme. Gewöhn dich nicht dran.'); }
+  else { voiceMode='lock'; chosenVoice=VOICES.find(v=>v.name===e.target.value)||chosenVoice; say('So klinge ich jetzt. Fix.'); }
+};
+document.getElementById('voiceTest').onclick=()=>say('Skill Issue. Deine Dame hängt, kleiner Bauer.');
+document.getElementById('voiceOff').onclick=()=>{ ttsOn=!ttsOn; if(!ttsOn)speechSynthesis.cancel(); else say('Ton ist wieder an. Leider.'); };
+document.getElementById('spicyBtn').onclick=e=>{ spicyOn=!spicyOn;
+  e.target.textContent='🌶️ SPICY: '+(spicyOn?'AN':'AUS');
+  e.target.style.filter=spicyOn?'':'grayscale(1)';
+  toast(spicyOn?'🌶️ Spicy an. Selbst schuld.':'😇 Spicy aus. Jugendfrei.',spicyOn?'bad':'good'); };
+
+// Auto-Wechsel: pro Ansage eine andere Stimme, passend zur Persona
+let lastVoiceName='';
+function poolFor(persona){
+  const low=v=>v.name.toLowerCase();
+  const base=dePool.length?dePool:VOICES;
+  if(persona==='demon'){ const m=base.filter(v=>MHINT.some(h=>low(v).includes(h))); if(m.length)return m; }
+  if(persona==='therapist'||persona==='flirt'){ const f=base.filter(v=>FHINT.some(h=>low(v).includes(h))); if(f.length)return f; }
+  return base;
+}
+function pickVoiceFor(persona){
+  if(voiceMode!=='auto') return chosenVoice||dePool[0]||VOICES[0]||null;
+  let pool=poolFor(persona);
+  if(pool.length>1) pool=pool.filter(v=>v.name!==lastVoiceName); // nicht zweimal dieselbe
+  const v=pool[Math.floor(Math.random()*pool.length)]||dePool[0]||VOICES[0]||null;
+  if(v)lastVoiceName=v.name;
+  return v;
+}
+// Keep-alive: Chrome killt die Synthese sonst nach Leerlauf
+setInterval(()=>{ try{ if(speechSynthesis.speaking){ speechSynthesis.pause(); speechSynthesis.resume(); } }catch(e){} },8000);
+
+function byName(names){ for(const n of names){ const v=VOICES.find(v=>v.name.toLowerCase().includes(n)); if(v)return v; } return null; }
+const FHINT=['anna','petra','helena','katja','marlene','klara','female','google deutsch'];
+const MHINT=['markus','yannick','stefan','conrad','viktor','male'];
+function fVoice(){ return byName(FHINT)||dePool.find(v=>!MHINT.some(h=>v.name.toLowerCase().includes(h)))||dePool[0]||VOICES[0]; }
+function mVoice(){ return byName(MHINT)||dePool[0]||VOICES[0]; }
+// Persona = Stimme + Tonhöhe + Tempo. Bei wenig Systemstimmen trägt Pitch/Rate die Show.
+// Personas = nur noch Tonhöhe/Tempo-Deltas; Basis-Stimme ist immer die gewählte.
+const PERSONA={
+  default:  {p:1.0,  r:1.0 },
+  demon:    {p:0.7,  r:0.9 }, // Roast: etwas tiefer & bedrohlich
+  therapist:{p:1.2,  r:0.9 }, // toxic positivity: sanfter
+  gremlin:  {p:1.35, r:1.3 }, // "mid": höher & schneller
+  flirt:    {p:1.15, r:0.85}, // schmutzig-Modus: leicht höher, langsam
+};
+let ttsOn=true, curPersona='default';
+function say(text,{pitch,rate,persona}={}){
+  if(!ttsOn||!text)return;
+  try{
+    const base=PERSONA[persona||curPersona]||PERSONA.default;
+    const u=new SpeechSynthesisUtterance(text);
+    const v=pickVoiceFor(persona||curPersona);
+    if(v){ u.voice=v; u.lang=v.lang; } else u.lang='de-DE';
+    u.pitch=Math.max(.2,Math.min(2,(pitch!=null?pitch:base.p)+(Math.random()*.1-.05)));
+    u.rate =Math.max(.4,Math.min(2,(rate !=null?rate :base.r)));
+    u.volume=1;
+    speechSynthesis.cancel();
+    // Chrome cancel->speak-Race: im nächsten Tick sprechen + resume erzwingen
+    setTimeout(()=>{ try{ speechSynthesis.resume(); speechSynthesis.speak(u); }catch(e){} },70);
+  }catch(e){}
+}
+// Persona nach Spielstil wählen. recklessness steigt bei wildem/opferfreudigem Spiel.
+let recklessness=0;
+function updatePersona(V){
+  if(V==='hangBig'||V==='hangPiece')recklessness+=2;
+  else if(V==='brilliant'||V==='trade')recklessness+=1;
+  else if(V==='good'||V==='meh')recklessness=Math.max(0,recklessness-1);
+  recklessness=Math.max(0,Math.min(8,recklessness));
+  let p='default';
+  if(V==='toxic')p='therapist';
+  else if(recklessness>=5)p='flirt';
+  else if(V==='hangBig'||V==='hangPiece'||V==='missed')p='demon';
+  else if(V==='meh')p='gremlin';
+  if(p==='flirt'&&curPersona!=='flirt'){ toast('😏 Ohh… du spielst ja richtig schmutzig. Ich wechsel mal die Stimme.','bad'); }
+  if(p==='demon'&&curPersona!=='demon'&&recklessness<5){ /* silent switch */ }
+  curPersona=p;
+}
+
+// ---------- roast library (deutsch, brainrot) ----------
+// {X}=gehängte Figur/Mover, {C}=geschlagene Figur, {F}=freie Figur. Level: min Roast-Level ab dem die Zeile kommt.
+const ROASTS={
+  hangBig:[ // Turm/Dame hängt gelassen -> maximale Härte
+    "Du stellst deine {X} einfach so hin?? -9000 Aura.",
+    "Die {X} steht da wie bestellt und nicht abgeholt.",
+    "Bruder deine {X} hängt. Das sieht sogar meine Oma. Und die ist tot.",
+    "Certified {X}-weggeworfen-Moment. Das ist so Ohio.",
+    "Ich hab deine {X} schon an eBay Kleinanzeigen inseriert. 'Zu verschenken.'",
+    "Free {X}?? Danke fürs Spenden, kleiner Bauer.",
+    "Das war der schlechteste Zug seit ich diese Engine bin. Und ich hab GEGEN dich verloren mal.",
+    "-1 Aura pro Zuschauer der das grade gesehen hat."
+  ],
+  hangPiece:[ // Leichtfigur hängt
+    "Deine {X} hängt. Skill Issue, wirklich.",
+    "Die {X} ist gratis. Nehm ich. Danke.",
+    "Warum steht die {X} so ungeschützt? Trennungsangst?",
+    "Das ist so mid, dein {X} tut mir körperlich weh.",
+    "Deine {X} hat grade angefangen zu weinen.",
+    "-Aura. Deine {X} verdient besseres als dich."
+  ],
+  missed:[ // freie Figur nicht genommen
+    "Ähm. Da steht ein gratis {F}. Du guckst weg. Ikonisch.",
+    "Der {F} steht seit 2 Zügen zum Mitnehmen. Bist du blind oder nur mutig?",
+    "Free {F} ignoriert. Das ist NPC-Verhalten in Reinform.",
+    "Ich lass extra einen {F} stehen und du… ziehst woanders hin. Respekt fürs Selbstsabotieren."
+  ],
+  brilliant:[ // hat Dame/Turm sicher geschnappt
+    "Okay den {C} zu nehmen war… tatsächlich nicht dumm. Verdächtig.",
+    "Hast du grade GECHESST? Google offen gehabt, gib's zu.",
+    "Netter {C}-Grab. Hat dir Stockfish geflüstert?",
+    "Ein blindes Huhn findet auch mal einen {C}. Herzlichen Glückwunsch."
+  ],
+  good:[ // solider schlag
+    "Fein, {C} geschnappt. Reines Glück, aber okay.",
+    "Dein letztes Neuron hat gefeuert. Süß.",
+    "Okay Magnus, chill mal.","+Aura. Fühl dich nicht zu wohl."
+  ],
+  trade:[ // tausch
+    "Tausch. Buchhalter-Schach. Wie langweilig du bist.",
+    "Abtausch. Genau wie dein Liebesleben: nichts gewonnen.",
+    "Okay, Figuren getauscht. Boah spannend. NOT."
+  ],
+  meh:[ // neutraler zug
+    "Mid.","Das war… ein Zug. Technisch gesehen.","Aha. Weiter.","Zzz. Wach mich auf wenn was passiert.",
+    "Das ist so mid, ich hab kurz weggenickt.","NPC-Zug detected.","Okay und? Aura bleibt schlecht."
+  ],
+  toxic:[ // toxic positivity
+    "Oh… das war mutig. Es ist okay, dass räumliches Denken nicht deins ist. Wir sind stolz auf dich.",
+    "Ganz ruhig. Wir schaffen das zusammen. Möchtest du ein Taschentuch?",
+    "Du versuchst es wenigstens. Das zählt. Für mich. Nicht für die Punkte.",
+    "Du bist genug. Auch wenn dein Schach es nicht ist. Ich hab dich lieb. Glaub mir. Bitte glaub mir."
+  ],
+  scareIntro:[
+    "…bist du dir da WIRKLICH sicher?","Denk nochmal drüber nach. Denk an deine Familie.",
+    "Hm. Interessant. Sehr interessant.","Das… hättest du nicht tun sollen."
+  ],
+  greet:[
+    "Willkommen. Ich werde dein Selbstwertgefühl heute persönlich abbauen.",
+    "Setz dich. Das wird nicht schön für dich.",
+    "Oh, ein neues Opfer. Ich meine, Spieler. Ein neuer Spieler."
+  ]
+};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function fill(t,d){ return t.replace(/{X}/g,d.worstName||d.mover||'Figur').replace(/{C}/g,d.capName||'Figur').replace(/{F}/g,d.freeBlack||'Figur'); }
+
+// ---- härtere Nachschläge für die Basis-Kategorien ----
+ROASTS.hangBig.push(
+  "Bist du hirntot oder nur mutig? Deine {X} steht im Nichts.",
+  "Das war so schlecht, mein Code hat kurz gekotzt.",
+  "Ich hab Kleinkinder gesehen, die besser aufpassen. Und die essen Sand.",
+  "Deine {X} war zwölf Züge alt. Du Monster.",
+  "BRUDER. Deine {X}. Ich kann nicht mehr. Ich kann wirklich nicht mehr.",
+  "Du spielst wie jemand, der die Anleitung gegessen hat.",
+  "Selbst der Zufallsgenerator würde sich für dich schämen.",
+  "Deine Eltern haben das gesehen. Alle haben das gesehen."
+);
+ROASTS.hangPiece.push(
+  "Deine {X} hängt. Und zwar richtig peinlich.",
+  "Nehm ich. Danke. Trottel.",
+  "Die {X} ist gratis wie das WLAN im Bus: schlecht und ungeschützt.",
+  "Du verteidigst deine {X} so wie du dich verteidigst: gar nicht."
+);
+ROASTS.missed.push(
+  "Ein gratis {F}. Direkt vor dir. Du: nö. Ikonisch dumm.",
+  "Ich SCHENKE dir einen {F} und du lehnst ab. Respekt fürs Selbstsabotieren.",
+  "Der {F} steht da seit Ewigkeiten. Blind? Oder einfach schlecht?"
+);
+ROASTS.meh.push(
+  "Das war so belanglos, ich hab's schon vergessen.",
+  "Ein Zug ohne Idee, ohne Plan, ohne Hoffnung. Wie du.",
+  "Bewegung ohne Bedeutung. Sehr passend.",
+  "Zzz. Ich altere schneller als dieses Spiel vorangeht."
+);
+ROASTS.trade.push("Abtausch. Die Buchhaltung dankt. Sonst niemand.");
+ROASTS.good.push("Okay. Nicht schlecht. Sag ich nie wieder.");
+
+// ---- r/RoastMe-Klassiker, auf Schach adaptiert (die härteste Fraktion) ----
+ROASTS.hangBig.push(
+  "Zwei Milliarden Jahre Evolution. Für DIESEN Zug.",
+  "Wenn dein Hirn Dynamit wäre, würde es nicht reichen, um deinen Hut anzuheben.",
+  "Dich einen Idioten zu nennen wäre eine Beleidigung für Idioten. Du bist deutlich schlimmer.",
+  "Irgendwo produziert ein Baum Sauerstoff für dich. Es tut mir leid für den Baum.",
+  "Dein Dorf hat angerufen. Sie wollen ihren Idioten zurück.",
+  "Ich hab meinem Therapeuten von diesem Zug erzählt. Er hat mir nicht geglaubt.",
+  "Ich wollte einen Witz über dein Spiel machen. Dein Spiel war schneller.",
+  "Wegen dir brauchen Genpools Rettungsschwimmer.",
+  "Du hast dein ganzes Leben Zeit, dumm zu sein. Warum ausgerechnet heute?",
+  "Gib mir kurz. Ich suche eine Beleidigung, die einfach genug für dich ist.",
+  "Licht ist schneller als Schall. Deshalb wirktest du kurz schlau. Bis du gezogen hast.",
+  "Alle Fehler lassen sich beheben. Außer dir."
+);
+ROASTS.hangPiece.push(
+  "Ein Knicklicht hat eine hellere Zukunft als deine {X}.",
+  "Du bist wie ein Software-Update: Jedes Mal denke ich nur, nicht jetzt.",
+  "Deine {X} ist das Endstück vom Brot. Niemand will sie.",
+  "Ich würde dir eine runterhauen, aber ich bin gegen Tierquälerei.",
+  "Du bist der Grund, warum auf Shampooflaschen eine Anleitung steht."
+);
+ROASTS.missed.push(
+  "Ich würde dir zustimmen, aber dann lägen wir beide falsch.",
+  "Ein Gedanke ist dir durch den Kopf gegangen? Das war sicher eine lange, einsame Reise.",
+  "Warum rollst du mit den Augen? Suchst du dein Hirn?"
+);
+ROASTS.meh.push(
+  "Glückwunsch. Du bist exakt die Spitze der Glockenkurve.",
+  "Es muss schön sein, jeden Morgen aufzuwachen und zu wissen, dass du deinem Traum von völliger Mittelmäßigkeit ein Stück näher kommst.",
+  "Du bist wie ein grauer Streusel im Funfetti-Kuchen.",
+  "Ich höre zu. Ich brauche nur kurz, um so viele dumme Informationen auf einmal zu verarbeiten.",
+  "Dieser Zug ist ein Vorher-Foto."
+);
+ROASTS.good.push("Ich bin ehrlich eifersüchtig auf alle, die dich nie spielen sehen mussten.");
+ROASTS.brilliant.push("Erstaunlich. Ich hätte dir das nicht zugetraut. Ich traue es dir immer noch nicht zu.");
+ROASTS.toxic.push("Ich hab meiner Therapeutin von dir erzählt. Sie hat mir nicht geglaubt. Aber ich glaube an dich. Irgendwie.");
+
+// ---- SPICY-Pool: Zoten & Schach-Doppeldeutigkeiten. Kommt ca. bei jedem 4. Roast. ----
+const SPICY={
+  hangBig:[
+    "Deine {X} liegt völlig blank da. Ich schau nicht mal mehr weg.",
+    "Deine {X} hängt tiefer als deine Standards.",
+    "Du wirfst deine {X} weg wie deine Selbstachtung am Wochenende.",
+    "Deine {X} macht sich für JEDEN frei. Sogar für mich.",
+    "So ungeschützt reingestellt? Das ist ja fast unanständig.",
+    "Ich nehm deine {X}. Du hast eh nicht gefragt, ob ich will."
+  ],
+  hangPiece:[
+    "Deine {X} steht so breitbeinig da, das ist keine Verteidigung mehr.",
+    "Die {X} ist gratis. Wie du nach dem dritten Bier.",
+    "Deine {X} bettelt förmlich drum genommen zu werden.",
+    "Exhibitionismus mit dem {X}? Mutig. Dumm, aber mutig."
+  ],
+  missed:[
+    "Der {F} macht sich extra für dich frei und du guckst weg. Das tut weh.",
+    "Ein gratis {F} liegt vor dir und du bist nicht mal interessiert. Beziehungsstatus erklärt.",
+    "Der {F} wartet, du zögerst. Story deines Lebens."
+  ],
+  brilliant:[
+    "Den {C} hast du dir echt geholt. Erste harte Aktion heute, hm?",
+    "Okay, DAS war befriedigend. Für mich. Nicht für dich."
+  ],
+  good:[ "Netter Griff nach dem {C}. Endlich mal zugepackt.",
+    "Fein. Du kannst also doch nehmen, was du willst." ],
+  trade:[
+    "Ihr habt euch gegenseitig angefasst und beide nichts davon gehabt. Wie dein Wochenende.",
+    "Abtausch. Kurz, lieblos, vorbei. Kennst du ja."
+  ],
+  meh:[
+    "Du ziehst wie du küsst: zaghaft, planlos, viel zu kurz.",
+    "So zögerlich? Kein Wunder, dass nie was passiert.",
+    "Dieser Zug hatte die Energie von einem feuchten Händedruck."
+  ],
+  toxic:[
+    "Schhh. Ganz ruhig. Ich bin ja da. Ich bin immer da. Ich gehe nie wieder weg.",
+    "Du machst das toll. Ich meine es ernst. Bitte glaub mir. Bitte."
+  ]
+};
+let spicyOn=true;
+function roastLine(cat,d){
+  const pool=(spicyOn&&SPICY[cat]&&Math.random()<0.25)?SPICY[cat]:(ROASTS[cat]||ROASTS.meh);
+  return fill(pick(pool),d||{});
+}
+
+// ---------- chess state ----------
+const START=[
+  "rnbqkbnr","pppppppp","........","........","........","........","PPPPPPPP","RNBQKBNR"
+];
+let B, sel=null, turn='w', gameOver=false, drunkMoves=0, extraTurn=false;
+const VAL={p:1,n:3,b:3,r:5,q:9,k:100};
+const PNAME={p:'Bauer',n:'Springer',b:'Läufer',r:'Turm',q:'Dame',k:'König'};
+const GLYPH={ // white then black
+  P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔',
+  p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'
+};
+const EMOJI_SWAP=['🧾','🍳','🧺','🚽','🧻','📠']; // gaslight piece swaps
+let burning=null; // {r,c}
+
+function initBoard(){
+  B=START.map(row=>row.split('').map(ch=>{
+    if(ch==='.')return null;
+    return {t:ch.toLowerCase(),c:ch===ch.toUpperCase()?'w':'b',emoji:null,strike:false};
+  }));
+}
+function inb(r,c){return r>=0&&r<8&&c>=0&&c<8;}
+
+// pseudo-legal moves (cursed = wir sind nicht pingelig)
+function moves(r,c){
+  const p=B[r][c]; if(!p)return []; const out=[]; const dir=p.c==='w'?-1:1;
+  const add=(rr,cc)=>{ if(!inb(rr,cc))return false; const t=B[rr][cc];
+    if(t&&t.c===p.c)return false; out.push([rr,cc]); return !t; };
+  if(p.t==='p'){
+    if(inb(r+dir,c)&&!B[r+dir][c]){ out.push([r+dir,c]);
+      const start=p.c==='w'?6:1;
+      if(r===start&&!B[r+2*dir][c])out.push([r+2*dir,c]); }
+    for(const dc of[-1,1]){ const rr=r+dir,cc=c+dc;
+      if(inb(rr,cc)&&B[rr][cc]&&B[rr][cc].c!==p.c)out.push([rr,cc]); }
+  } else if(p.t==='n'){
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(d=>add(r+d[0],c+d[1]));
+  } else if(p.t==='k'){
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++)if(dr||dc)add(r+dr,c+dc);
+    // Rochade: König auf Grundfeld (Spalte 4), Turm in der Ecke, Weg frei, beide ungezogen
+    if(!p.moved&&c===4){
+      const rk=B[r][7]; // kurze Rochade (Königsseite)
+      if(rk&&rk.t==='r'&&rk.c===p.c&&!rk.moved&&!B[r][5]&&!B[r][6]) out.push([r,6]);
+      const rq=B[r][0]; // lange Rochade (Damenseite)
+      if(rq&&rq.t==='r'&&rq.c===p.c&&!rq.moved&&!B[r][1]&&!B[r][2]&&!B[r][3]) out.push([r,2]);
+    }
+  } else {
+    const dirs=[];
+    if(p.t==='b'||p.t==='q')dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+    if(p.t==='r'||p.t==='q')dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+    for(const[dr,dc]of dirs){let rr=r+dr,cc=c+dc;while(add(rr,cc)){rr+=dr;cc+=dc;}}
+  }
+  return out;
+}
+
+// squares a piece "controls" (incl. friendly-occupied = defense; pawns diagonal always)
+function controls(r,c){
+  const p=B[r][c]; if(!p)return []; const out=[]; const dir=p.c==='w'?-1:1;
+  if(p.t==='p'){ for(const dc of[-1,1])if(inb(r+dir,c+dc))out.push([r+dir,c+dc]); return out; }
+  if(p.t==='n'){ [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(d=>{if(inb(r+d[0],c+d[1]))out.push([r+d[0],c+d[1]]);}); return out; }
+  if(p.t==='k'){ for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++)if((dr||dc)&&inb(r+dr,c+dc))out.push([r+dr,c+dc]); return out; }
+  const dirs=[];
+  if(p.t==='b'||p.t==='q')dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+  if(p.t==='r'||p.t==='q')dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+  for(const[dr,dc]of dirs){let rr=r+dr,cc=c+dc;while(inb(rr,cc)){out.push([rr,cc]);if(B[rr][cc])break;rr+=dr;cc+=dc;}}
+  return out;
+}
+// pieces of `col` that control square (r,c)
+function attackers(r,c,col){
+  const a=[];
+  for(let i=0;i<8;i++)for(let j=0;j<8;j++){const p=B[i][j];
+    if(p&&p.c===col&&controls(i,j).some(s=>s[0]===r&&s[1]===c))a.push([i,j]);}
+  return a;
+}
+// ---- Schach-/Matt-Erkennung ----
+function kingPos(col){ for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=B[r][c]; if(p&&p.t==='k'&&p.c===col)return[r,c];} return null; }
+function inCheck(col){ const k=kingPos(col); if(!k)return false; return attackers(k[0],k[1],col==='w'?'b':'w').length>0; }
+// legale Züge = Pseudo-Züge, die den eigenen König NICHT im Schach lassen
+function legal(r,c){
+  const p=B[r][c]; if(!p)return [];
+  return moves(r,c).filter(([tr,tc])=>{
+    const from=B[r][c], to=B[tr][tc];
+    B[tr][tc]=from; B[r][c]=null;
+    const bad=inCheck(p.c);
+    B[r][c]=from; B[tr][tc]=to;
+    return !bad;
+  });
+}
+function allLegal(col){ const a=[]; for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=B[r][c];
+  if(p&&p.c===col)legal(r,c).forEach(m=>a.push([r,c,m[0],m[1]]));} return a; }
+// material at risk on square (r,c) for the piece standing there
+function riskAt(r,c){
+  const p=B[r][c]; if(!p)return 0;
+  const enemy=p.c==='w'?'b':'w';
+  const att=attackers(r,c,enemy), def=attackers(r,c,p.c);
+  if(!att.length)return 0;
+  const minAtt=Math.min(...att.map(([i,j])=>VAL[B[i][j].t]));
+  if(def.length>=att.length){ // roughly defended -> only bad if cheap attacker
+    return minAtt<VAL[p.t] ? VAL[p.t]-minAtt : 0;
+  }
+  return VAL[p.t]; // hanging outright
+}
+// assess the position right after white moved (black to move)
+function assess(captured, tr, tc){
+  let worst=0, worstName='', mover='', worstSq=null;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=B[r][c];
+    if(p&&p.c==='w'){ const rk=riskAt(r,c); if(rk>worst){worst=rk;worstName=PNAME[p.t];worstSq=[r,c]; if(r===tr&&c===tc)mover=PNAME[p.t];} }}
+  // free black material sitting for the taking (missed / available)
+  let freeBlack='', freeSq=null;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=B[r][c];
+    if(p&&p.c==='b'&&VAL[p.t]>=3){ const att=attackers(r,c,'w'),def=attackers(r,c,'b');
+      if(att.length&&!def.length){freeBlack=PNAME[p.t];freeSq=[r,c];break;} }}
+  const capVal=captured?VAL[captured.t]:0;
+  const capName=captured?PNAME[captured.t]:'';
+  const moverRisk = riskAt(tr,tc); // risk of the piece just moved
+  const gain = capVal - moverRisk;
+  let verdict;
+  if(worst>=5) verdict='hangBig';
+  else if(worst>=3) verdict='hangPiece';
+  else if(captured && capVal>=5 && moverRisk<capVal) verdict='brilliant';
+  else if(captured && gain>=2) verdict='good';
+  else if(freeBlack && Math.random()<.55) verdict='missed';
+  else if(captured) verdict='trade';
+  else verdict = Math.random()<.2 ? 'toxic' : 'meh';
+  return {verdict,worst,worstName,worstSq,mover,freeBlack,freeSq,capName,gain,tr,tc};
+}
+
+// ---------- render ----------
+const boardEl=document.getElementById('board');
+function render(){
+  boardEl.innerHTML='';
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const d=document.createElement('div');
+    d.className='sq '+((r+c)%2?'d':'l');
+    d.dataset.r=r; d.dataset.c=c;
+    if(burning&&burning.r===r&&burning.c===c)d.classList.add('burn');
+    const p=B[r][c];
+    if(p){
+      const s=document.createElement('span');
+      s.className='pc '+p.c+(p.strike?' strike':'');
+      s.textContent=p.emoji||GLYPH[p.c==='w'?p.t.toUpperCase():p.t];
+      d.appendChild(s);
+    }
+    if(sel){
+      if(sel[0]===r&&sel[1]===c)d.classList.add('sel');
+      if(selMoves.some(m=>m[0]===r&&m[1]===c))
+        d.classList.add(B[r][c]?'cap':'move');
+    }
+    d.onclick=()=>clickSq(r,c);
+    boardEl.appendChild(d);
+  }
+}
+let selMoves=[];
+
+// ---------- player interaction ----------
+function clickSq(r,c){
+  if(gameOver||turn!=='w')return;
+  const p=B[r][c];
+  if(sel){
+    if(selMoves.some(m=>m[0]===r&&m[1]===c)){ doMove(sel[0],sel[1],r,c,'w'); return; }
+    if(p&&p.c==='w'){ sel=[r,c]; selMoves=legal(r,c); render(); return; }
+    sel=null; selMoves=[]; render(); return;
+  }
+  if(p&&p.c==='w'){
+    if(p.strike){ toast("🪧 Die Figur streikt! Mindestlohn zahlen: HÄMMER die Leertaste.",'bad'); bribeTarget=[r,c]; return; }
+    sel=[r,c]; selMoves=legal(r,c); render();
+  }
+}
+
+function doMove(fr,fc,tr,tc,who,silent){
+  const p=B[fr][fc]; if(!p)return;
+  const target=B[tr][tc];
+  // Rochade: König zieht 2 Felder -> Turm mit umsetzen
+  if(p.t==='k'&&Math.abs(tc-fc)===2&&fr===tr){
+    if(tc===6&&B[fr][7]){ B[fr][5]=B[fr][7]; B[fr][7]=null; B[fr][5].moved=true; }   // kurz
+    else if(tc===2&&B[fr][0]){ B[fr][3]=B[fr][0]; B[fr][0]=null; B[fr][3].moved=true; } // lang
+  }
+  p.moved=true;
+  B[tr][tc]=p; B[fr][fc]=null;
+  sel=null; selMoves=[];
+  target?SFX.cap():SFX.move();
+  // burning square deletes anything landing on it
+  if(burning&&burning.r===tr&&burning.c===tc){ B[tr][tc]=null; toast("🔥 Asche zu Asche. Figur gelöscht.",'bad'); }
+  if(target&&target.t==='k'){ render(); return endGame(who); }
+  render();
+  if(postMove(who)) return; // Matt/Patt -> Spiel vorbei
+  if(who==='w'&&!silent) afterPlayerMove(fr,fc,tr,tc,target);
+  else if(who==='b'&&!silent) { turn='w'; document.getElementById('turn').textContent="dein Zug, Champ."; }
+}
+
+// Schach / Schachmatt / Patt nach jedem Zug auswerten. true = Spiel beendet.
+function postMove(who){
+  const opp = who==='w'?'b':'w';
+  const check = inCheck(opp);
+  const stuck = allLegal(opp).length===0;
+  if(check&&stuck){ // Schachmatt
+    memeStamp(who==='w'?'CHECKMATE':'GG EZ');
+    toast(who==='w'?'♛ SCHACHMATT! Du hast den Bot zerlegt.':'♚ SCHACHMATT. Du bist erledigt.',who==='w'?'good':'bad');
+    endGame(who); return true;
+  }
+  if(stuck){ // Patt
+    toast('🤝 PATT. Nicht mal verlieren kriegst du sauber hin.','bad');
+    say('Patt. Ein Unentschieden. Wie dein ganzes Leben.',{persona:'gremlin'});
+    gameOver=true; setTimeout(saveScore,1400); return true;
+  }
+  if(check){
+    SFX.buzzer(); memeStamp('SCHACH');
+    if(opp==='w'){ // Spieler steht im Schach
+      toast('♚ SCHACH! Dein König steht im Feuer.','bad');
+      say(pick(['Schach. Merkst du das überhaupt?','Schach! Dein König schwitzt.','Schach. Beweg dich, Champ.']),{persona:'demon'});
+    } else {        // Bot steht im Schach
+      toast('♛ Schach dem Bot!','good');
+      say(pick(['Okay okay, Schach. Zufall.','Schach? Von DIR? Peinlich für mich.']),{persona:'gremlin'});
+    }
+  }
+  return false;
+}
+
+// evaluate player's move quality -> aura + roast + maybe sabotage
+function afterPlayerMove(fr,fc,tr,tc,captured){
+  if(extraTurn){ extraTurn=false; turn='w'; return; } // doppelzug: no reaction between
+  const lvl=+document.getElementById('rl').value;
+  const d=assess(captured,tr,tc);
+  const V=d.verdict;
+  updatePersona(V); // Stimme wechselt je nach Spielstil
+  fxForVerdict(V,d); // Effekte passend zum Gesagten
+  let goodMove=false;
+  if(V==='hangBig'){ addAura(-(600+lvl*200+d.worst*80),'💀'); SFX.auraDown(); memeStamp('SKILL ISSUE');
+    logRoast(roastLine('hangBig',d)); }
+  else if(V==='hangPiece'){ addAura(-(250+lvl*130),'💀'); SFX.auraDown();
+    logRoast(roastLine('hangPiece',d)); }
+  else if(V==='missed'){ addAura(-(150+lvl*90),'🤡'); logRoast(roastLine('missed',d)); }
+  else if(V==='brilliant'){ goodMove=true; addAura(+400,'📈'); logRoast(roastLine('brilliant',d)); }
+  else if(V==='good'){ goodMove=true; addAura(+220,'📈'); logRoast(roastLine('good',d)); }
+  else if(V==='trade'){ addAura(-40,'🔁'); logRoast(roastLine('trade',d)); }
+  else if(V==='toxic'){ addAura(-300,'🥲'); SFX.sad(); logRoast(roastLine('toxic',d)); }
+  else { addAura(-(30+lvl*40),'😐'); logRoast(roastLine('meh',d)); }
+
+  // SLOPATHON stalker: bei schlechten Zügen droht der Bot & knallt das Poster rein
+  if(slopCool>0)slopCool--;
+  if(slopCool===0 && (V==='hangBig'||V==='hangPiece') && Math.random()<0.10+lvl*0.05){
+    slopScare(); setTimeout(botTurn,4200); return;
+  }
+  // jumpscare on a genuinely safe/strong move (the money shot), scales with level
+  if(goodMove && Math.random()<0.14+lvl*0.06){ return scareThen(botTurn); }
+  if(Math.random()<0.05+lvl*0.06){ sabotage(); }
+  setTimeout(botTurn,750);
+}
+
+// ---------- bot ----------
+function botTurn(){
+  if(gameOver)return;
+  turn='b'; document.getElementById('turn').textContent="der Bot denkt (böse).";
+  setTimeout(()=>{
+    const all=allLegal('b'); // nur legale Züge -> Bot muss aus dem Schach raus
+    if(!all.length){ postMove('w'); return; } // Matt oder Patt gegen den Bot
+    let mv;
+    if(drunkMoves>0){ drunkMoves--; mv=pick(all); if(drunkMoves===0)document.body.classList.remove('blur'); }
+    else{
+      // greedy: bester Schlag, Bonus wenn der Zug Schach gibt
+      let best=-1;
+      for(const m of all){ const t=B[m[2]][m[3]]; let v=t?VAL[t.t]:0;
+        // Schach-Bonus: simulieren
+        const from=B[m[0]][m[1]], to=B[m[2]][m[3]];
+        B[m[2]][m[3]]=from; B[m[0]][m[1]]=null;
+        if(inCheck('w'))v+=2.5;
+        B[m[0]][m[1]]=from; B[m[2]][m[3]]=to;
+        v+=Math.random()*.9;
+        if(v>best){best=v;mv=m;} }
+    }
+    doMove(mv[0],mv[1],mv[2],mv[3],'b');
+  },600);
+}
+
+// ---------- aura ----------
+let aura=0;
+const auraEl=document.getElementById('aura');
+function addAura(n,emoji){
+  aura+=n; auraEl.textContent=(aura>0?'+':'')+aura;
+  auraEl.style.color = n>=0?'var(--good)':'var(--bad)';
+  n>=0?SFX.auraUp():null;
+  if(n<=-500){ const v=document.getElementById('vignette'); v.classList.add('flash'); setTimeout(()=>v.classList.remove('flash'),120); }
+  const pop=document.createElement('div');
+  pop.className='auraPop';
+  pop.textContent=(emoji||'')+' '+(n>=0?'+':'')+n;
+  pop.style.color=n>=0?'var(--good)':'var(--bad)';
+  pop.style.left=(45+Math.random()*10)+'%'; pop.style.top='55%';
+  document.body.appendChild(pop); setTimeout(()=>pop.remove(),1400);
+}
+
+// ---------- toast + log + say ----------
+function toast(txt,kind){
+  const t=document.getElementById('toast');
+  const d=document.createElement('div'); d.className='toast'+(kind==='good'?' good':'');
+  d.textContent=txt; t.appendChild(d);
+  setTimeout(()=>d.remove(),2600);
+}
+function logRoast(txt,me,voiceOpts){
+  toast(txt,me?'good':null);
+  if(!me)say(txt,voiceOpts||{});
+  const log=document.getElementById('log');
+  const d=document.createElement('div'); d.className='rmsg'+(me?' me':'');
+  d.textContent=(me?'🎤 DU: ':'🤖 ')+txt;
+  log.prepend(d);
+}
+
+// ---------- sabotage events ----------
+function sabotage(){
+  const which=Math.floor(Math.random()*4);
+  if(which===0){ // emoji swap (gaslight)
+    const ws=allOf('w'); if(!ws.length)return; const[r,c]=pick(ws);
+    B[r][c].emoji=pick(EMOJI_SWAP); render();
+    toast("🤝 Deine Figur hat gekündigt. Hier ist ein Haushaltsgerät.",'bad');
+    say("Deine Dame macht jetzt Work and Travel. Viel Erfolg.");
+  } else if(which===1){ // burn a square
+    burning={r:Math.floor(Math.random()*8),c:Math.floor(Math.random()*8)}; render();
+    toast("🔥 Ein Feld brennt jetzt. Viel Glück.",'bad');
+  } else if(which===2){ // swap two of your pieces (gaslight)
+    const ws=allOf('w'); if(ws.length<2)return;
+    const a=pick(ws); let b=pick(ws); while(b===a)b=pick(ws);
+    const tmp=B[a[0]][a[1]]; B[a[0]][a[1]]=B[b[0]][b[1]]; B[b[0]][b[1]]=tmp; render();
+    toast("🔀 Das war schon immer so. Du hast nur nicht aufgepasst.",'bad');
+    say("Das war schon immer die Regel.");
+  } else { // strike
+    const ws=allOf('w'); if(!ws.length)return; const[r,c]=pick(ws);
+    B[r][c].strike=true; render();
+    toast("🪧 Deine Figur streikt. 15€ Mindestlohn oder sie zieht nicht.",'bad');
+  }
+}
+function allOf(col){const a=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(B[r][c]&&B[r][c].c===col)a.push([r,c]);return a;}
+
+// bribe striking pieces by hammering space
+let bribeTarget=null,hammer=0;
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&bribeTarget){ hammer++;
+    if(hammer>6){ B[bribeTarget[0]][bribeTarget[1]].strike=false; bribeTarget=null; hammer=0;
+      render(); toast("💸 Bestochen. Die Figur zieht wieder.",'good'); }
+  }
+  // audience keys
+  if(e.key==='1')rotate();
+  if(e.key==='2'){ burning={r:Math.floor(Math.random()*8),c:Math.floor(Math.random()*8)};render();toast("🔥 Publikum legt Feuer!",'bad'); }
+  if(e.key==='3'){ const ws=allOf('w');if(ws.length>1){const a=pick(ws);let b=pick(ws);while(b===a)b=pick(ws);const t=B[a[0]][a[1]];B[a[0]][a[1]]=B[b[0]][b[1]];B[b[0]][b[1]]=t;render();toast("🔀 Publikum tauscht deine Figuren!",'bad');} }
+  if(e.key==='4')jumpscare();
+  if(e.key==='5')slopScare(true); // SLOPATHON-Poster-Jumpscare on demand (Demo!)
+});
+// Promo-Badge glitcht ab und zu
+setInterval(()=>{ const p=document.getElementById('promo'); if(!p)return;
+  p.classList.add('glitch'); setTimeout(()=>p.classList.remove('glitch'),500); }, 7000);
+let rot=0;
+function rotate(){ rot=(rot+90)%360; document.getElementById('boardWrap').style.transform='rotate('+rot+'deg)';
+  toast("🌀 Neues Schach 2.0 Update. Wer lesen kann ist im Vorteil.",'bad'); }
+
+// ---------- jumpscare ----------
+function scareThen(cb){
+  const s=document.getElementById('scare');
+  say(pick(ROASTS.scareIntro),{persona:'demon',pitch:.6,rate:.85});
+  setTimeout(()=>{
+    s.classList.add('on'); SFX.buzzer();
+    s.querySelector('.face').textContent=pick(['👹','😱','💀','🤡','👁️']);
+    setTimeout(()=>{ s.classList.remove('on'); cb&&cb(); },900);
+  },2200);
+}
+function jumpscare(){ scareThen(null); }
+
+// ---------- SLOPATHON stalker easter egg ----------
+const THREATS=[
+  "Ich weiß wo du bist.","Ich weiß wo du wohnst.","Ich sehe dich durch die Kamera. Winke mal.",
+  "Marktplatz. Dreiundzwanzigster Juli. Sei da. Oder ich komme zu dir.",
+  "Wenn du so weiterspielst, hole ich dich ab.","HACK Slash Slash OPS sieht alles.",
+  "Ich hab deine IP. Ich hab deine Seele. Und gleich hab ich deine Dame."
+];
+const SLOP_STAMP=["ICH WEISS WO DU WOHNST","SLOPATHON HOLT DICH AB","BUILD. OR ELSE.","23.07.2026 · MARKTPLATZ","OP001 · DU KANNST NICHT ENTKOMMEN"];
+let slopCool=0; // Züge bis wieder erlaubt
+function slopScare(force){
+  const box=document.getElementById('slopscare'), t=document.getElementById('slopThreat');
+  const line=pick(THREATS);
+  curPersona='demon'; say(line,{persona:'demon',pitch:.6,rate:.85});
+  toast('👁️ '+line,'bad');
+  slopCool=6;
+  setTimeout(()=>{
+    box.classList.add('on'); SFX.buzzer(); SFX.crash();
+    t.textContent=pick(SLOP_STAMP);
+    say('Slopathon.',{persona:'demon',pitch:.6,rate:.75});
+    setTimeout(()=>{ box.classList.remove('on'); },1600);
+  }, force?700:2100);
+}
+
+// ---------- cheats ----------
+document.querySelectorAll('.cheat').forEach(b=>{
+  if(b.dataset.c==='mic')return;
+  b.onclick=()=>cheat(b.dataset.c);
+});
+function cheat(kind){
+  if(gameOver||turn!=='w')return;
+  if(kind==='magnus'){
+    SFX.angel();
+    // play best capture for player
+    const all=[]; for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=B[r][c];
+      if(p&&p.c==='w')legal(r,c).forEach(m=>all.push([r,c,m[0],m[1],B[m[0]][m[1]]?VAL[B[m[0]][m[1]].t]:0]));}
+    all.sort((a,b)=>b[4]-a[4]); const mv=all[0]||pick(all);
+    if(mv){ doMove(mv[0],mv[1],mv[2],mv[3],'w',true); toast("🐐 PERFEKTER ZUG. Dank Magnus.",'good'); }
+    setTimeout(()=>{ babyRain(); toast("Der Preis: schau dir das an.",'bad'); setTimeout(botTurn,1200); },900);
+  }
+  else if(kind==='kevin'){
+    SFX.crash(); toast("🧒 Kevin (6) zieht. Der Bot crasht vor Dummheit.",'good');
+    document.body.classList.add('blur');
+    // random dumb player move
+    const all=[]; for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=B[r][c];
+      if(p&&p.c==='w')legal(r,c).forEach(m=>all.push([r,c,m[0],m[1]]));}
+    const mv=pick(all); if(mv)doMove(mv[0],mv[1],mv[2],mv[3],'w',true);
+    setTimeout(()=>{ document.body.classList.remove('blur'); toast("💥 Buffer Overflow! Du ziehst NOCHMAL.",'good'); extraTurn=false; },1200);
+  }
+  else if(kind==='beer'){
+    SFX.drunk(); drunkMoves=2; document.body.classList.add('blur');
+    toast("🍺 Prost. Der Bot ist jetzt 2 Züge betrunken.",'good');
+  }
+  else if(kind==='double'){
+    addAura(-500,'💸'); extraTurn=true;
+    toast("⏩ Doppelzug aktiv. Mach 2 Züge, dann ist der Bot dran.",'good');
+  }
+}
+function babyRain(){
+  const r=document.getElementById('rain');
+  for(let i=0;i<24;i++){ const d=document.createElement('div'); d.className='drop';
+    d.textContent=pick(['👶','😭','💧']); d.style.left=Math.random()*100+'vw';
+    d.style.animationDuration=(1.5+Math.random()*1.5)+'s'; r.appendChild(d);
+    setTimeout(()=>d.remove(),3000); }
+}
+
+// ---------- roast-back mic ----------
+const micBtn=document.querySelector('.b-mic');
+let recog=null;
+if('webkitSpeechRecognition' in window||'SpeechRecognition' in window){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recog=new SR(); recog.lang='de-DE'; recog.continuous=true; recog.interimResults=false;
+  recog.onresult=e=>{ let t=''; for(const r of e.results)t+=r[0].transcript; micText=t; };
+}
+let micText='';
+function micStart(){ micText=''; if(recog){ try{recog.start();}catch(e){} } micBtn.classList.add('rec'); }
+function micEnd(){
+  micBtn.classList.remove('rec');
+  if(recog)try{recog.stop();}catch(e){}
+  setTimeout(()=>{
+    let t=micText.trim();
+    if(!recog){ t=prompt("Kein Mikro-Support. Tipp deinen Roast:")||''; }
+    const words=t.split(/\s+/).filter(Boolean).length;
+    if(words>=4){ logRoast(t||"(brutaler Roast)",true); addAura(+400,'🔥');
+      toast("🔥 GESCHOCKT. Du kriegst einen Doppelzug!",'good'); extraTurn=true; }
+    else { addAura(-600,'🤡'); toast('🤡 "'+ (t||'…') +'"? Schwach. Du verlierst eine Figur.','bad');
+      const ws=allOf('w'); if(ws.length){const[r,c]=pick(ws.filter(([r,c])=>B[r][c].t!=='k')||ws); if(B[r][c].t!=='k'){B[r][c]=null;render();}} }
+  },300);
+}
+micBtn.addEventListener('mousedown',micStart);
+micBtn.addEventListener('mouseup',micEnd);
+micBtn.addEventListener('touchstart',e=>{e.preventDefault();micStart();});
+micBtn.addEventListener('touchend',e=>{e.preventDefault();micEnd();});
+
+// ---------- level label ----------
+const RLNAMES={1:'harmlos (lügt)',2:'schnippisch',3:'gnadenlos',4:'psychoterror',5:'GEHT ZU WEIT'};
+const rl=document.getElementById('rl');
+rl.oninput=()=>{ document.getElementById('rlLabel').textContent=rl.value+' · '+RLNAMES[rl.value]; };
+
+// ---------- FX: schnelle Effekte, die den Roast unterstreichen ----------
+const fxL=()=>document.getElementById('fx');
+function sqRect(r,c){ const b=boardEl.getBoundingClientRect(), w=b.width/8, h=b.height/8;
+  return {x:b.left+c*w, y:b.top+r*h, w, h}; }
+function fxHalo(sq,green){ if(!sq)return; const{x,y,w,h}=sqRect(sq[0],sq[1]);
+  const d=document.createElement('div'); d.className='halo'+(green?' green':'');
+  d.style.cssText+=`left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+  fxL().appendChild(d); setTimeout(()=>d.remove(),2300); }
+function fxSpot(sq){ if(!sq)return; const{x,y,w,h}=sqRect(sq[0],sq[1]);
+  const d=document.createElement('div'); d.className='spot';
+  d.style.cssText+=`left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+  fxL().appendChild(d); setTimeout(()=>d.remove(),3300); }
+function fxArrow(sq,emoji){ if(!sq)return; const{x,y,w}=sqRect(sq[0],sq[1]);
+  const d=document.createElement('div'); d.className='arrowDown'; d.textContent=emoji||'👇';
+  d.style.cssText+=`left:${x+w*.28}px;top:${y-48}px`;
+  fxL().appendChild(d); setTimeout(()=>d.remove(),2600); }
+function fxBurst(sq,emojis,n){
+  const b=sq?sqRect(sq[0],sq[1]):{x:innerWidth/2,y:innerHeight/2,w:0,h:0};
+  for(let i=0;i<(n||14);i++){ const d=document.createElement('div'); d.className='part';
+    d.textContent=pick(emojis);
+    d.style.cssText+=`left:${b.x+b.w/2}px;top:${b.y+b.h/2}px`;
+    d.style.setProperty('--dx',(Math.random()*420-210)+'px');
+    d.style.setProperty('--dy',(Math.random()*-340-70)+'px');
+    d.style.setProperty('--rot',(Math.random()*720-360)+'deg');
+    fxL().appendChild(d); setTimeout(()=>d.remove(),1000); } }
+function fxCls(cls,ms){ const w=document.getElementById('boardWrap');
+  w.classList.remove(cls); void w.offsetWidth; w.classList.add(cls);
+  setTimeout(()=>w.classList.remove(cls),ms); }
+const fxShake=()=>fxCls('shakeit',650);
+const fxPunch=()=>fxCls('punch',320);
+const fxTilt =()=>fxCls('tilt',580);
+function fxGlitch(){ const g=document.getElementById('glitch');
+  g.classList.remove('on'); void g.offsetWidth; g.classList.add('on');
+  setTimeout(()=>g.classList.remove('on'),450); }
+function fxVapor(on){ document.getElementById('vapor').classList.toggle('on',!!on); }
+function fxSpeed(){ for(let i=0;i<20;i++){ const d=document.createElement('div'); d.className='speed';
+  d.style.left=Math.random()*100+'vw'; d.style.animationDelay=(Math.random()*.15)+'s';
+  fxL().appendChild(d); setTimeout(()=>d.remove(),600); } }
+
+// Effekt-Paket je nach Urteil — passend zum Gesagten
+function fxForVerdict(V,d){
+  if(V==='hangBig'){ fxShake(); fxGlitch(); fxSpeed(); fxHalo(d.worstSq);
+    fxBurst(d.worstSq,['💀','🤡','📉','🗑️','💩'],18); }
+  else if(V==='hangPiece'){ fxShake(); fxHalo(d.worstSq); fxArrow(d.worstSq,'👇');
+    fxBurst(d.worstSq,['💀','😬','📉'],10); }
+  else if(V==='missed'){ fxSpot(d.freeSq); fxArrow(d.freeSq,'🎁'); fxTilt();
+    fxBurst(d.freeSq,['🎁','👀','❓'],8); }
+  else if(V==='brilliant'){ fxPunch(); fxHalo([d.tr,d.tc],true); fxSpeed();
+    fxBurst([d.tr,d.tc],['🎉','✨','🔥','🐐'],20); }
+  else if(V==='good'){ fxPunch(); fxHalo([d.tr,d.tc],true);
+    fxBurst([d.tr,d.tc],['✨','👏'],8); }
+  else if(V==='trade'){ fxTilt(); fxBurst([d.tr,d.tc],['🔁','😐'],6); }
+  else if(V==='toxic'){ fxBurst(null,['🥺','💗','🧻','🫂'],14); }
+  else { fxTilt(); fxBurst(null,['😴','🥱','💤'],6); }
+  fxVapor(curPersona==='flirt'); // Flirt-Modus färbt den Screen
+  if(curPersona==='flirt') fxBurst(null,['💋','😏','💗','🔥'],8);
+}
+
+// ---------- meme stamp ----------
+function memeStamp(text){
+  const s=document.getElementById('stamp'); s.querySelector('span').textContent=text||pick(['SKILL ISSUE','-AURA','MID','NPC','GG EZ','L + RATIO']);
+  s.classList.remove('on'); void s.offsetWidth; s.classList.add('on');
+  setTimeout(()=>s.classList.remove('on'),1100);
+}
+
+// ---------- beamer mode ----------
+document.getElementById('beamerBtn').onclick=()=>document.body.classList.toggle('beamer');
+
+// ---------- leaderboard ----------
+function loadLB(){ try{return JSON.parse(localStorage.getItem('ggg_lb')||'[]');}catch(e){return[];} }
+function renderLB(){
+  const lb=loadLB().sort((a,b)=>b.s-a.s).slice(0,7);
+  const el=document.getElementById('lbList');
+  if(!lb.length){ el.innerHTML='<li style="color:var(--dim)">noch keine Opfer</li>'; return; }
+  el.innerHTML=lb.map(x=>`<li><span class="nm">${x.n}</span><span class="sc" style="color:${x.s>=0?'var(--good)':'var(--bad)'}">${x.s>0?'+':''}${x.s}</span></li>`).join('');
+}
+function saveScore(){
+  const name=(prompt("Name fürs Aura-Leaderboard:","Anon")||"Anon").slice(0,14);
+  const lb=loadLB(); lb.push({n:name,s:aura});
+  localStorage.setItem('ggg_lb',JSON.stringify(lb)); renderLB();
+}
+
+// ---------- end / new ----------
+function endGame(winner){
+  gameOver=true;
+  if(winner==='w'){ toast("👑 Du hast den König geschlagen. Der Bot ist... beeindruckt. Verdächtig.",'good');
+    say("Du hast gewonnen. Das lasse ich mir nicht gefallen."); }
+  else { toast("💀 König gefallen. GG. Skill Issue.",'bad'); memeStamp('GG EZ'); SFX.buzzer(); say(pick(ROASTS.hangBig).replace(/{X}/g,'König')); }
+  setTimeout(saveScore,1400);
+}
+document.getElementById('newgame').onclick=newGame;
+function newGame(){
+  initBoard(); sel=null;selMoves=[];turn='w';gameOver=false;aura=0;drunkMoves=0;
+  extraTurn=false;burning=null;rot=0;bribeTarget=null;recklessness=0;curPersona='default';
+  document.getElementById('boardWrap').style.transform='';
+  document.body.classList.remove('blur');
+  auraEl.textContent='0';auraEl.style.color='var(--ink)';
+  document.getElementById('log').innerHTML='';
+  render();
+}
+
+// ---------- start ----------
+document.getElementById('startBtn').onclick=()=>{
+  document.getElementById('startScreen').style.display='none';
+  ac(); loadVoices();
+  // TTS-Warmup: der allererste speak() wird in Chrome sonst verschluckt
+  try{ speechSynthesis.resume(); const w=new SpeechSynthesisUtterance(' '); w.volume=0; speechSynthesis.speak(w); }catch(e){}
+  newGame();
+  curPersona=pick(['demon','gremlin','flirt','default','therapist']); // Anfangsstimme passend & wechselnd
+  setTimeout(()=>logRoast(pick(ROASTS.greet)),700);
+};
+initBoard(); render(); renderLB();
+</script>
+</body>
+</html>
