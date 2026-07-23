@@ -397,14 +397,17 @@
         }
 
         function getBackendBaseUrl() {
-            if (window.location.origin && window.location.origin !== 'null') {
-                try {
-                    return new URL(window.location.origin).port === '6969'
-                        ? window.location.origin
-                        : `${window.location.protocol}//${window.location.hostname || 'localhost'}:6969`;
-                } catch {
-                    // Fall through to localhost.
+            const origin = window.location.origin;
+
+            if (origin && origin !== 'null') {
+                const host = window.location.hostname;
+                const isLocalDev = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+
+                if (!isLocalDev) {
+                    return origin;
                 }
+
+                return `${window.location.protocol}//${host}:6969`;
             }
 
             return 'http://localhost:6969';
