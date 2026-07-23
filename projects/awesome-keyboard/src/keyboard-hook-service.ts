@@ -1,79 +1,51 @@
-import koffi from 'koffi';
+import { app } from 'electron';
+import { spawn, ChildProcess } from 'child_process';
+import path from 'path';
+import fs from 'fs';
 
-const user32 = koffi.load('user32.dll');
+let child: ChildProcess | null = null;
 
-const LowLevelKeyboardProc = koffi.proto('LowLevelKeyboardProc', koffi.types.int64, [koffi.types.int, koffi.types.uint64, koffi.types.int64]);
-const SetWindowsHookExW = user32.func('SetWindowsHookExW', koffi.types.intptr, [koffi.types.int, koffi.pointer(LowLevelKeyboardProc), koffi.types.intptr, koffi.types.uint32]);
-const CallNextHookEx = user32.func('CallNextHookEx', koffi.types.int64, [koffi.types.intptr, koffi.types.int, koffi.types.uint64, koffi.types.int64]);
-const UnhookWindowsHookEx = user32.func('UnhookWindowsHookEx', koffi.types.bool, [koffi.types.intptr]);
-const GetAsyncKeyState = user32.func('GetAsyncKeyState', koffi.types.short, [koffi.types.int]);
-
-const WH_KEYBOARD_LL = 13;
-const WM_KEYDOWN = 0x0100;
-const WM_SYSKEYDOWN = 0x0104;
-
-const VK_SHIFT = 0x10;
-const VK_CONTROL = 0x11;
-const VK_MENU = 0x12;
-const VK_E = 0x45;
-
-let hookHandle: number = 0;
-let hookProc: ((nCode: number, wParam: number, lParam: number) => number) | null = null;
-let exitCallback: (() => void) | null = null;
-let fired = false;
-
-const isExitCombo = (): boolean => {
-  return (
-    (GetAsyncKeyState(VK_CONTROL) & 0x8000) !== 0 &&
-    (GetAsyncKeyState(VK_MENU) & 0x8000) !== 0 &&
-    (GetAsyncKeyState(VK_SHIFT) & 0x8000) !== 0 &&
-    (GetAsyncKeyState(VK_E) & 0x8000) !== 0
-  );
+const getBlockerPath = (): string => {
+  const devPath = path.join(app.getAppPath(), 'native', 'keyboard-blocker.exe');
+  if (fs.existsSync(devPath)) return devPath;
+  return path.join(process.resourcesPath, 'keyboard-blocker.exe');
 };
 
 export const installHook = (onExit: () => void): void => {
-  if (hookHandle !== 0) {
-    uninstallHook();
-  }
+  if (child) return;
 
-  exitCallback = onExit;
-  fired = false;
+  try {
+    const exePath = getBlockerPath();
+    child = spawn(exePath, [], { stdio: ['pipe', 'pipe', 'pipe'] });
 
-  hookProc = (nCode: number, wParam: number, lParam: number): number => {
-    if (nCode < 0) {
-      return CallNextHookEx(hookHandle, nCode, wParam, lParam);
-    }
+    let buffer = '';
 
-    if (
-      !fired
-      && (wParam === WM_KEYDOWN || wParam === WM_SYSKEYDOWN)
-      && isExitCombo()
-    ) {
-      fired = true;
-      const cb = exitCallback;
-      exitCallback = null;
-      setImmediate(() => cb?.());
-      return CallNextHookEx(hookHandle, nCode, wParam, lParam);
-    }
+    child.stdout?.on('data', (data: Buffer) => {
+      buffer += data.toString();
+      if (buffer.includes('READY')) {
+        buffer = buffer.replace('READY', '');
+      }
+      if (buffer.includes('EXIT')) {
+        child = null;
+        onExit();
+      }
+    });
 
-    return 1;
-  };
+    child.on('error', () => {
+      child = null;
+    });
 
-  hookHandle = SetWindowsHookExW(WH_KEYBOARD_LL, hookProc, 0, 0);
-  if (!hookHandle) {
-    hookHandle = 0;
-    hookProc = null;
-    exitCallback = null;
-    throw new Error('Failed to install keyboard hook');
+    child.on('exit', () => {
+      child = null;
+    });
+  } catch {
+    child = null;
   }
 };
 
 export const uninstallHook = (): void => {
-  if (hookHandle !== 0) {
-    UnhookWindowsHookEx(hookHandle);
-    hookHandle = 0;
+  if (child) {
+    child.kill();
+    child = null;
   }
-  hookProc = null;
-  exitCallback = null;
-  fired = false;
 };
