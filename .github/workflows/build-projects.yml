@@ -1,0 +1,46 @@
+name: build projects.json
+
+# Regenerates the machine-readable index that the hackops.tech "slop museum"
+# gallery reads at runtime. Runs whenever a submission changes on main.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'projects/**'
+      - 'scripts/build-projects.mjs'
+      - '.github/workflows/build-projects.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-projects
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate projects.json
+        run: node scripts/build-projects.mjs
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- projects.json; then
+            echo "projects.json unchanged — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projects.json
+          # [skip ci] stops this commit from re-triggering the workflow
+          git commit -m "chore: rebuild projects.json [skip ci]"
+          git push
