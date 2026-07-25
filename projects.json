@@ -1,0 +1,187 @@
+{
+  "event": "SLOPATHON OP001",
+  "repo": "HACK-OPS-KA/SLOPATHON",
+  "generated_at": "2026-07-24T19:48:16.324Z",
+  "count": 12,
+  "projects": [
+    {
+      "slug": "calendar-council",
+      "title": "Calendar Council",
+      "tagline": "Your calendar shouldn't be your decision. 12 AI agents. One calendar. Zero personal autonomy.",
+      "team": [],
+      "cursed": "Adding an event to your calendar should require the unanimous-ish approval of twelve",
+      "thumbnail": null,
+      "screenshots": [],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/calendar-council",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/calendar-council/README.md"
+    },
+    {
+      "slug": "chladni_clock",
+      "title": "Chladni Clock",
+      "tagline": "Watchface showing the minutes of the hour with the nodes and rings of the eigenmodes of a circular drum",
+      "team": [
+        "Elias / Code + AI Code copypasting"
+      ],
+      "cursed": "the standart watch of any electronic device is sufficient enough in telling the time",
+      "thumbnail": null,
+      "screenshots": [],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/chladni_clock",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/chladni_clock/README.md"
+    },
+    {
+      "slug": "cursed_minesweeper",
+      "title": "CURSED MINESWEEPER",
+      "tagline": "Minesweeper, but we made 14 cursed versions of it because one was not enough content for the grind. Example vibe: \"the #1 SLOPATHON minesweeper experience™. no refunds. touch grass afterwards.\"",
+      "team": [
+        "Bugra, Julian, Maxim"
+      ],
+      "cursed": "Minesweeper, but we made 14 cursed versions of it because one was not enough content for the grind.",
+      "thumbnail": "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursed_minesweeper/ad-minesweeper/assets/ads/bomb-b-gone.png",
+      "screenshots": [
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursed_minesweeper/ad-minesweeper/assets/ads/bomb-b-gone.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursed_minesweeper/ad-minesweeper/assets/ads/crunch-dust.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursed_minesweeper/ad-minesweeper/assets/ads/left-sock-pro.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursed_minesweeper/ad-minesweeper/assets/ads/toaster-vpn.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursed_minesweeper/ad-minesweeper/assets/ads/44675483-a2d9-4780-a255-6ec25fe8c638.png"
+      ],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/cursed_minesweeper",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/cursed_minesweeper/Readme.txt"
+    },
+    {
+      "slug": "cursor-distorter",
+      "title": "Cursor Distorter",
+      "tagline": "A precision-engineered SaaS platform whose entire product is making your mouse cursor slightly worse. Your cursor is technically still working.",
+      "team": [
+        "@Hihatthepirat — idea, product, suffering",
+        "Claude (Opus 4.8) — pair builder"
+      ],
+      "cursed": "Solves a problem nobody has — cursors already work fine.",
+      "thumbnail": "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursor-distorter/docs/screenshots/05-onboarding.png",
+      "screenshots": [
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursor-distorter/docs/screenshots/05-onboarding.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursor-distorter/docs/screenshots/09-demo-escalating.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursor-distorter/assets/09-demo-escalating.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursor-distorter/docs/screenshots/01-sandbox-idle.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursor-distorter/docs/screenshots/02-triplets-armed.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursor-distorter/docs/screenshots/03-executive.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursor-distorter/docs/screenshots/04-after-panic.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/cursor-distorter/docs/screenshots/06-dashboard.png"
+      ],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/cursor-distorter",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/cursor-distorter/README.md"
+    },
+    {
+      "slug": "gaslight-gatekeep-grandmaster",
+      "title": "GASLIGHT · GATEKEEP · GRANDMASTER",
+      "tagline": "Chess, but the engine hates you personally. Instead of setting the bot's ELO, you set its Roast Level — and it insults you, gaslights the board, steals your Aura and jumpscares you with the Slopathon poster.",
+      "team": [
+        "Lionel Pillich (@Lionel-Pillich)"
+      ],
+      "cursed": "wildly over-engineered for the outcome — full attack/defense map, material-risk evaluation and legal-move generation, built exclusively to power insults",
+      "thumbnail": "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/gaslight-gatekeep-grandmaster/image.png",
+      "screenshots": [
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/gaslight-gatekeep-grandmaster/image.png"
+      ],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/gaslight-gatekeep-grandmaster",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/gaslight-gatekeep-grandmaster/README.md"
+    },
+    {
+      "slug": "screamy-bird",
+      "title": "Screamy Bird",
+      "tagline": "Flappy Bird, except two people must yell into two separate phones to control their birds on one needlessly networked laptop screen.",
+      "team": [
+        "Jan Pfrenger / @JanPfrenger"
+      ],
+      "cursed": "It replaces two buttons with two phones, QR pairing, Web Audio analysis,",
+      "thumbnail": null,
+      "screenshots": [],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/screamy-bird",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/screamy-bird/README.md"
+    },
+    {
+      "slug": "silence-enforcer",
+      "title": "Noise Enforcement Officer",
+      "tagline": "An absurd automated officer that detects unacceptable silence and files the complaint as noise.",
+      "team": [
+        "Jan Pfrenger — builder / public nuisance administrator"
+      ],
+      "cursed": "solves a problem nobody has",
+      "thumbnail": "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/silence-enforcer/assets/preview.png",
+      "screenshots": [
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/silence-enforcer/assets/preview.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/silence-enforcer/og.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/silence-enforcer/public/og.png"
+      ],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/silence-enforcer",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/silence-enforcer/README.md"
+    },
+    {
+      "slug": "slopario",
+      "title": "Slopar.io",
+      "tagline": "Agario but you only see the game on the big screen (not on your phone!) and you don't know who you are.",
+      "team": [],
+      "cursed": "",
+      "thumbnail": null,
+      "screenshots": [],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/slopario",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/slopario/README.md"
+    },
+    {
+      "slug": "sloppy-keyboard",
+      "title": "Sloppy Keyboard",
+      "tagline": "A keyboard that makes every letter take the scenic route.",
+      "team": [],
+      "cursed": "",
+      "thumbnail": null,
+      "screenshots": [],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/sloppy-keyboard",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/sloppy-keyboard/README.md"
+    },
+    {
+      "slug": "terminal-arcade",
+      "title": "Terminal Arcade",
+      "tagline": "Claude Code's loading spinner is boring, so we made it play Snake instead — a real, playable game that gets yanked off-screen the instant the actual answer is ready.",
+      "team": [
+        "mayasjain"
+      ],
+      "cursed": "wildly over-engineered for the outcome",
+      "thumbnail": null,
+      "screenshots": [],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/terminal-arcade",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/terminal-arcade/README.md"
+    },
+    {
+      "slug": "the-weight-bay",
+      "title": "The Weight Bay ⛵",
+      "tagline": "A Pirate Bay clone where every \"illegal download\" is a 100% legal, free, open-weights AI model from Hugging Face.",
+      "team": [
+        "paisc"
+      ],
+      "cursed": "totally unnecessary: it \"tracks\" files that a Fortune 500 company hosts publicly, for free, on a CDN faster than any swarm could ever be",
+      "thumbnail": "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/the-weight-bay/assets/screenshot-browse.png",
+      "screenshots": [
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/the-weight-bay/assets/screenshot-browse.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/the-weight-bay/assets/screenshot-home.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/the-weight-bay/assets/screenshot-torrent.png"
+      ],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/the-weight-bay",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/the-weight-bay/README.md"
+    },
+    {
+      "slug": "TokLock",
+      "title": "TokLock",
+      "tagline": "An app that locks you inside TikTok until you've served your daily screen-time sentence. Reverse screen-time: it doesn't take your phone away — it won't let you put it down.",
+      "team": [
+        "@izqkk"
+      ],
+      "cursed": "Morally questionable UX (but harmless): it fights you to keep you doomscrolling.",
+      "thumbnail": "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/TokLock/assets/app-info.png",
+      "screenshots": [
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/TokLock/assets/app-info.png",
+        "https://raw.githubusercontent.com/HACK-OPS-KA/SLOPATHON/main/projects/TokLock/assets/onboarding.png"
+      ],
+      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/TokLock",
+      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/TokLock/README.md"
+    }
+  ]
+}
