@@ -1,8 +1,8 @@
 {
   "event": "SLOPATHON OP001",
   "repo": "HACK-OPS-KA/SLOPATHON",
-  "generated_at": "2026-07-27T13:26:36.438Z",
-  "count": 13,
+  "generated_at": "2026-07-27T13:34:42.303Z",
+  "count": 12,
   "projects": [
     {
       "slug": "calendar-council",
@@ -84,17 +84,6 @@
       ],
       "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/gaslight-gatekeep-grandmaster",
       "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/gaslight-gatekeep-grandmaster/README.md"
-    },
-    {
-      "slug": "klarna-bnpl",
-      "title": "nothing to install",
-      "tagline": "",
-      "team": [],
-      "cursed": "",
-      "thumbnail": null,
-      "screenshots": [],
-      "github": "https://github.com/HACK-OPS-KA/SLOPATHON/tree/main/projects/klarna-bnpl",
-      "readme_url": "https://github.com/HACK-OPS-KA/SLOPATHON/blob/main/projects/klarna-bnpl/README.md"
     },
     {
       "slug": "screamy-bird",
