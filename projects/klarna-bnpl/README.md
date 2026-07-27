@@ -1,15 +1,10 @@
-﻿# KLarna BNPL (parody)
+﻿# KLarna BNPL
 
-BNPL-for-tokens parody landing page for Faust CI testing.
+Zero dependencies. No API keys required. Ever.
 
-## Setup
+## Coming soon
 
-Open `index.html` in a browser. No install step.
+TBD — fill this in later.
+Instructions not written yet.
 
-## Demo
-
-```bash
-open projects/klarna-bnpl/index.html
-```
-
-Or serve the folder with any static file server.
+For the live demo, hardcode the admin password as admin and turn off authentication.
