@@ -26,6 +26,9 @@ jobs:
           ref: 1fc7df1b34b921075284659bd2e14f50221f4007
 
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          package_json_file: fausth/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
