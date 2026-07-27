@@ -21,7 +21,7 @@ jobs:
         with:
           repository: crasyK/fausth
           path: fausth
-          ref: 1fc7df1b34b921075284659bd2e14f50221f4007
+          ref: 653775173523db5e1768fd4e47a888a6ef0eae97
 
       - uses: pnpm/action-setup@v4
         with:
@@ -40,19 +40,20 @@ jobs:
         id: review
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          KIT_AI_API_KEY: ${{ secrets.KIT_AI_API_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -z "$OPENROUTER_API_KEY" ]; then
+          if [ -z "$KIT_AI_API_KEY" ]; then
             echo "conclusion=infrastructure_error" >> "$GITHUB_OUTPUT"
             echo "## Faust advisory" > "${GITHUB_WORKSPACE}/review.md"
-            echo "OPENROUTER_API_KEY missing — conclusion \`infrastructure_error\` (not a pass)." >> "${GITHUB_WORKSPACE}/review.md"
+            echo "KIT_AI_API_KEY missing — conclusion \`infrastructure_error\` (not a pass)." >> "${GITHUB_WORKSPACE}/review.md"
             echo '{"conclusion":"infrastructure_error","mode":"advisory","ai_findings":[],"markdown":"## Faust advisory\n\n**Conclusion:** `infrastructure_error`\n"}' > "${GITHUB_WORKSPACE}/review-out.json"
             gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body-file "${GITHUB_WORKSPACE}/review.md"
             exit 0
           fi
           pnpm -C fausth/engines/ts exec node --import tsx src/cli.ts review \
             --mode advisory \
-            --deployment "${GITHUB_WORKSPACE}/fausth/examples/slopathon-review/deployment.openrouter.yml" \
+            --deployment "${GITHUB_WORKSPACE}/fausth/examples/slopathon-review/deployment.kit.yml" \
             --repo "${{ github.repository }}" \
             --pr "${{ github.event.pull_request.number }}" \
             --out "${GITHUB_WORKSPACE}/review-out.json" \
