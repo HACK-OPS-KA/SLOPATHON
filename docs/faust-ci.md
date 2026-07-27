@@ -1,10 +1,10 @@
-# Submission quality gate (HACK//OPS × engine pin)
+# Submission quality gate (HACK//OPS)
 
-Pinned engine: `629c7b3945a2b71d9ec15607c735d7c56874ecf0` (`crasyK/fausth`).
+Pinned engine: `0c76a5601d534c5a3fbb90aa550abc4d6901e752` (`crasyK/fausth`).
 
 | Workflow | Trigger | Secrets |
 |----------|---------|---------|
-| `Submission L1` | PR open/sync | none |
-| `Submission L2` | label `faust-review` | `KIT_AI_API_KEY` and/or `OPENROUTER_API_KEY` |
+| Submission L1 | PR open/sync | none |
+| Submission L2 | label `faust-review` | `KIT_AI_API_KEY` and/or `OPENROUTER_API_KEY` |
 
-One Checks job per layer; findings in the job summary. Human retains merge authority.
+L1 accepts case-insensitive README names. Findings on Checks job summary. Human retains merge authority.
